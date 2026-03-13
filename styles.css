@@ -739,12 +739,18 @@ button:active {
 .calendar-day-label {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  max-width: 100%;
   padding: 4px 8px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.18);
   font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.04em;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .calendar-editor {
@@ -1116,8 +1122,10 @@ th {
   }
 
   .calendar-day-label {
-    padding: 3px 6px;
-    font-size: 0.64rem;
+    max-width: 100%;
+    padding: 2px 4px;
+    font-size: 0.55rem;
+    letter-spacing: 0.02em;
   }
 
   .chart-modal {

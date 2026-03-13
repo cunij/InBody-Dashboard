@@ -854,7 +854,7 @@ function renderWorkoutCalendar() {
     }
 
     const label = entry
-      ? `<span class="calendar-day-label">${getWorkoutDisplayLabel(entry)}</span>`
+      ? `<span class="calendar-day-label">${getCalendarWorkoutLabel(entry)}</span>`
       : "";
     const ariaLabel = entry
       ? `${formatDate(dateString)}, 운동함, ${getWorkoutDisplayLabel(entry)}`
@@ -1059,6 +1059,26 @@ function getWorkoutDisplayLabel(entry) {
   }
 
   return parts.join(" + ") || "휴식";
+}
+
+function getCalendarWorkoutLabel(entry) {
+  if (!entry) {
+    return "";
+  }
+
+  if (entry.mainSplit && entry.cardio) {
+    return `${entry.mainSplit}+C`;
+  }
+
+  if (entry.mainSplit) {
+    return entry.mainSplit;
+  }
+
+  if (entry.cardio) {
+    return "CARDIO";
+  }
+
+  return "";
 }
 
 function areWorkoutsEqual(left, right) {
