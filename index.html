@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>InBody Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=SUIT:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <h1>InBody Dashboard</h1>
+        <button type="button" id="theme-toggle" class="theme-toggle">다크 모드</button>
+      </header>
+
+      <section class="panel summary-panel">
+        <p class="section-label">최근 기록</p>
+        <div id="latest-summary" class="summary-content empty">
+          아직 기록이 없습니다. 첫 측정값을 입력하세요.
+        </div>
+      </section>
+
+      <section class="panel calendar-panel">
+        <div class="panel-head panel-head-inline">
+          <div>
+            <h2>운동 캘린더</h2>
+          </div>
+          <div id="workout-summary" class="calendar-summary">최근 7일 0일 운동</div>
+        </div>
+
+        <div class="calendar-layout">
+          <div class="calendar-board">
+            <div class="calendar-toolbar">
+              <button type="button" id="calendar-prev" class="ghost calendar-nav">이전 달</button>
+              <strong id="calendar-month">2026년 3월</strong>
+              <button type="button" id="calendar-next" class="ghost calendar-nav">다음 달</button>
+            </div>
+
+            <div class="calendar-weekdays" aria-hidden="true">
+              <span>일</span>
+              <span>월</span>
+              <span>화</span>
+              <span>수</span>
+              <span>목</span>
+              <span>금</span>
+              <span>토</span>
+            </div>
+
+            <div id="calendar-grid" class="calendar-grid"></div>
+          </div>
+
+          <aside class="calendar-editor">
+            <p class="section-label">선택 날짜</p>
+            <strong id="selected-workout-date" class="calendar-date-label">-</strong>
+
+            <div class="workout-button-grid">
+              <button
+                type="button"
+                id="workout-push"
+                class="workout-split-button"
+                data-workout-type="PUSH"
+                aria-pressed="false"
+              >
+                PUSH
+              </button>
+              <button
+                type="button"
+                id="workout-pull"
+                class="workout-split-button"
+                data-workout-type="PULL"
+                aria-pressed="false"
+              >
+                PULL
+              </button>
+              <button
+                type="button"
+                id="workout-leg"
+                class="workout-split-button"
+                data-workout-type="LEG"
+                aria-pressed="false"
+              >
+                LEG
+              </button>
+              <button
+                type="button"
+                id="workout-cardio"
+                class="workout-split-button"
+                data-workout-type="CARDIO"
+                aria-pressed="false"
+              >
+                CARDIO
+              </button>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" id="save-workout" class="primary">운동 저장</button>
+              <button type="button" id="delete-workout" class="ghost">기록 삭제</button>
+            </div>
+
+            <p id="workout-editor-status" class="calendar-editor-status"></p>
+          </aside>
+        </div>
+      </section>
+
+      <main class="layout">
+        <section class="panel form-panel">
+          <div class="panel-head">
+            <h2>기록 입력</h2>
+          </div>
+
+          <form id="inbody-form" class="data-form stacked-form">
+            <label>
+              날짜
+              <input type="date" id="date" name="date" required />
+            </label>
+            <label>
+              체중 (kg)
+              <input
+                type="number"
+                id="weight"
+                name="weight"
+                min="0"
+                step="0.1"
+                placeholder="예: 68.4"
+                required
+              />
+            </label>
+            <label>
+              체지방률 (%)
+              <input
+                type="number"
+                id="bodyFat"
+                name="bodyFat"
+                min="0"
+                max="100"
+                step="0.1"
+                placeholder="예: 19.2"
+                required
+              />
+            </label>
+            <label>
+              골격근량 (kg)
+              <input
+                type="number"
+                id="muscle"
+                name="muscle"
+                min="0"
+                step="0.1"
+                placeholder="예: 29.7"
+                required
+              />
+            </label>
+            <div class="form-actions">
+              <button type="submit" class="primary">저장</button>
+              <button type="button" id="reset-storage" class="ghost">전체 삭제</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel ai-panel">
+          <div class="panel-head panel-head-inline">
+            <h2>AI 평가</h2>
+            <p id="server-status" class="status-line">서버 설정을 확인하고 있습니다...</p>
+          </div>
+
+          <div class="ai-config stacked-form">
+            <label>
+              모델
+              <select id="model" name="model"></select>
+            </label>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" id="save-model-settings" class="secondary">모델 저장</button>
+            <button type="button" id="run-analysis" class="primary">평가 생성</button>
+          </div>
+
+          <div class="analysis-box">
+            <p class="section-label">평가 결과</p>
+            <div id="analysis-output" class="analysis-output">
+              최근 기록을 남기면 여기에 AI 평가 또는 로컬 분석 결과가 표시됩니다.
+            </div>
+          </div>
+
+          <div class="routine-box">
+            <p class="section-label">추천 루틴</p>
+            <div id="routine-output" class="routine-output">
+              평가를 생성하면 오늘 추천 운동 루틴이 여기에 표시됩니다.
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <section class="panel chart-panel">
+        <div class="panel-head">
+          <h2>변화 그래프</h2>
+        </div>
+
+        <div class="charts">
+          <article
+            class="chart-card"
+            data-metric="weight"
+            role="button"
+            tabindex="-1"
+            aria-disabled="true"
+          >
+            <div class="metric-head">
+              <span class="metric-dot weight"></span>
+              <strong>체중</strong>
+            </div>
+            <div class="chart-stage" data-stage="weight">
+              <canvas id="weight-chart" width="480" height="240"></canvas>
+              <div class="chart-tooltip" data-tooltip-for="weight" hidden></div>
+            </div>
+          </article>
+
+          <article
+            class="chart-card"
+            data-metric="bodyFat"
+            role="button"
+            tabindex="-1"
+            aria-disabled="true"
+          >
+            <div class="metric-head">
+              <span class="metric-dot fat"></span>
+              <strong>체지방률</strong>
+            </div>
+            <div class="chart-stage" data-stage="bodyFat">
+              <canvas id="bodyfat-chart" width="480" height="240"></canvas>
+              <div class="chart-tooltip" data-tooltip-for="bodyFat" hidden></div>
+            </div>
+          </article>
+
+          <article
+            class="chart-card"
+            data-metric="muscle"
+            role="button"
+            tabindex="-1"
+            aria-disabled="true"
+          >
+            <div class="metric-head">
+              <span class="metric-dot muscle"></span>
+              <strong>골격근량</strong>
+            </div>
+            <div class="chart-stage" data-stage="muscle">
+              <canvas id="muscle-chart" width="480" height="240"></canvas>
+              <div class="chart-tooltip" data-tooltip-for="muscle" hidden></div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel history-panel">
+        <div class="panel-head">
+          <h2>기록 내역</h2>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>날짜</th>
+                <th>체중</th>
+                <th>체지방률</th>
+                <th>골격근량</th>
+                <th>관리</th>
+              </tr>
+            </thead>
+            <tbody id="history-body">
+              <tr>
+                <td colspan="5" class="empty-row">저장된 기록이 없습니다.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel profile-panel">
+        <div class="panel-head panel-head-inline">
+          <div>
+            <h2>생활 방식 & 목표</h2>
+          </div>
+          <span id="profile-status" class="save-state">저장 대기</span>
+        </div>
+
+        <div class="profile-layout">
+          <label class="profile-editor">
+            <span class="profile-label">프로필 메모</span>
+            <textarea
+              id="profile-text"
+              rows="18"
+              placeholder="생활 방식과 목표를 자유롭게 적으세요."
+            ></textarea>
+          </label>
+
+          <aside class="profile-help">
+            <p class="section-label">AI 반영 항목</p>
+            <ul class="profile-points">
+              <li>키, 체중, 골격근량, 목표</li>
+              <li>운동 빈도와 분할</li>
+              <li>식사 루틴과 영양 전략</li>
+              <li>보충제와 생활 우선순위</li>
+            </ul>
+            <div class="profile-actions">
+              <button type="button" id="toggle-profile-editor" class="secondary">수정하기</button>
+              <button type="button" id="save-profile" class="primary">프로필 저장</button>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </div>
+
+    <div id="chart-modal" class="chart-modal" hidden aria-hidden="true">
+      <div id="chart-modal-backdrop" class="chart-modal-backdrop"></div>
+      <section class="chart-modal-panel" role="dialog" aria-modal="true" aria-labelledby="chart-modal-title">
+        <div class="chart-modal-head">
+          <h3 id="chart-modal-title">그래프 확대</h3>
+          <button type="button" id="close-chart-modal" class="ghost chart-modal-close">닫기</button>
+        </div>
+        <div class="chart-stage chart-stage-modal">
+          <canvas id="chart-modal-canvas" width="960" height="560"></canvas>
+          <div id="chart-modal-tooltip" class="chart-tooltip chart-tooltip-modal" hidden></div>
+        </div>
+      </section>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
