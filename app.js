@@ -1,7 +1,4 @@
-const STORAGE_KEY = "inbody-tracker-records";
 const SETTINGS_KEY = "inbody-tracker-settings";
-const PROFILE_KEY = "inbody-profile";
-const WORKOUTS_KEY = "inbody-workouts";
 const ALLOWED_MODELS = [
   "gpt-5",
   "gpt-5-mini",
@@ -162,8 +159,9 @@ const ROUTINE_TEMPLATES = {
   ],
 };
 
-let records = loadRecords();
-let workouts = loadWorkouts();
+let records = [];
+let workouts = {};
+let profileContent = DEFAULT_PROFILE;
 let serverConfig = {
   hasApiKey: false,
   defaultModel: DEFAULT_MODEL,
@@ -185,13 +183,13 @@ bootstrap();
 async function bootstrap() {
   document.getElementById("date").value = getTodayLocalDate();
   applySavedTheme();
-  ensureProfileSeeded();
   renderServerStatus("loading");
   renderModelOptions(ALLOWED_MODELS, normalizeModel(loadSettings().model));
   renderProfile();
   renderAll();
   bindEvents();
   await loadServerConfig();
+  await loadPersistedData();
   await loadModelOptions();
 }
 
@@ -244,18 +242,6 @@ function bindEvents() {
   window.addEventListener("resize", handleWindowResize);
 }
 
-function loadRecords() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) ?? [];
-  } catch {
-    return [];
-  }
-}
-
-function saveRecords() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
-}
-
 function loadSettings() {
   try {
     return JSON.parse(localStorage.getItem(SETTINGS_KEY)) ?? {};
@@ -274,17 +260,69 @@ function saveSettingsData(nextSettings) {
   return merged;
 }
 
-function loadWorkouts() {
+async function loadPersistedData() {
   try {
-    const parsed = JSON.parse(localStorage.getItem(WORKOUTS_KEY)) ?? {};
-    return sanitizeWorkouts(parsed);
-  } catch {
-    return {};
+    const payload = await apiFetchJson("/api/data");
+    records = sanitizeRecords(payload.records);
+    workouts = sanitizeWorkouts(payload.workouts);
+    profileContent =
+      typeof payload.profile === "string" && payload.profile.trim()
+        ? payload.profile
+        : DEFAULT_PROFILE;
+    renderProfile();
+    renderAll();
+  } catch (error) {
+    records = [];
+    workouts = {};
+    profileContent = DEFAULT_PROFILE;
+    renderProfile();
+    renderAll();
+    analysisOutput.textContent = `저장된 데이터를 불러오지 못했습니다: ${error.message}`;
+    console.error(error);
   }
 }
 
-function saveWorkouts() {
-  localStorage.setItem(WORKOUTS_KEY, JSON.stringify(workouts));
+async function apiFetchJson(url, options = {}) {
+  const response = await fetch(url, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+    ...options,
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload.error || `Request failed: ${response.status}`);
+  }
+
+  return payload;
+}
+
+function sanitizeRecords(raw) {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+
+  return raw
+    .filter((entry) => entry && typeof entry === "object")
+    .map((entry) => ({
+      id: String(entry.id || "").trim(),
+      date: String(entry.date || "").trim(),
+      weight: Number(entry.weight),
+      bodyFat: Number(entry.bodyFat),
+      muscle: Number(entry.muscle),
+      createdAt: Number.isFinite(Number(entry.createdAt))
+        ? Number(entry.createdAt)
+        : Date.now(),
+    }))
+    .filter(
+      (entry) =>
+        entry.id &&
+        isDateString(entry.date) &&
+        [entry.weight, entry.bodyFat, entry.muscle].every(Number.isFinite),
+    )
+    .sort(sortByDate);
 }
 
 function sanitizeWorkouts(raw) {
@@ -323,23 +361,26 @@ function sanitizeWorkouts(raw) {
   return normalized;
 }
 
-function ensureProfileSeeded() {
-  if (!localStorage.getItem(PROFILE_KEY)) {
-    localStorage.setItem(PROFILE_KEY, DEFAULT_PROFILE);
-  }
-}
-
 function loadProfile() {
-  return localStorage.getItem(PROFILE_KEY) || DEFAULT_PROFILE;
+  return profileContent || DEFAULT_PROFILE;
 }
 
-function saveProfile() {
+async function saveProfile() {
   const nextProfile = profileText.value.trim() || DEFAULT_PROFILE;
-  localStorage.setItem(PROFILE_KEY, nextProfile);
-  profileText.value = nextProfile;
-  setProfileStatus("saved");
-  setProfileEditing(false);
-  analysisOutput.textContent = "생활 방식과 목표를 저장했습니다.";
+  try {
+    const payload = await apiFetchJson("/api/profile", {
+      method: "PUT",
+      body: JSON.stringify({ profile: nextProfile }),
+    });
+    profileContent = payload.profile || nextProfile;
+    profileText.value = profileContent;
+    setProfileStatus("saved");
+    setProfileEditing(false);
+    analysisOutput.textContent = "생활 방식과 목표를 저장했습니다.";
+  } catch (error) {
+    analysisOutput.textContent = `프로필 저장 실패: ${error.message}`;
+    console.error(error);
+  }
 }
 
 function renderProfile() {
@@ -512,7 +553,7 @@ function getSelectedModel() {
   );
 }
 
-function handleSubmit(event) {
+async function handleSubmit(event) {
   event.preventDefault();
 
   const formData = new FormData(form);
@@ -533,6 +574,26 @@ function handleSubmit(event) {
     return;
   }
 
+  try {
+    const payload = await apiFetchJson("/api/records", {
+      method: "POST",
+      body: JSON.stringify(entry),
+    });
+    records = [
+      ...records.filter((record) => record.date !== payload.record.date),
+      payload.record,
+    ].sort(sortByDate);
+    renderAll();
+    form.reset();
+    document.getElementById("date").value = getTodayLocalDate();
+    analysisOutput.textContent =
+      "기록을 저장했습니다. 평가 생성 버튼으로 최신 상태를 다시 확인하세요.";
+  } catch (error) {
+    analysisOutput.textContent = `기록 저장 실패: ${error.message}`;
+    console.error(error);
+  }
+  return;
+
   records = [
     ...records.filter((record) => record.date !== entry.date),
     entry,
@@ -545,11 +606,25 @@ function handleSubmit(event) {
     "기록을 저장했습니다. 평가 생성 버튼으로 해석을 확인할 수 있습니다.";
 }
 
-function resetStorage() {
+async function resetStorage() {
   const confirmed = window.confirm("저장된 모든 인바디 기록을 삭제할까요?");
   if (!confirmed) {
     return;
   }
+
+  try {
+    await apiFetchJson("/api/records", {
+      method: "DELETE",
+    });
+    records = [];
+    renderAll();
+    closeChartModal({ immediate: true });
+    analysisOutput.textContent = "모든 인바디 기록을 삭제했습니다.";
+  } catch (error) {
+    analysisOutput.textContent = `기록 전체 삭제 실패: ${error.message}`;
+    console.error(error);
+  }
+  return;
 
   records = [];
   saveRecords();
@@ -558,7 +633,20 @@ function resetStorage() {
   analysisOutput.textContent = "모든 인바디 기록을 삭제했습니다.";
 }
 
-function deleteRecord(id) {
+async function deleteRecord(id) {
+  try {
+    await apiFetchJson(`/api/records/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    });
+    records = records.filter((record) => record.id !== id);
+    renderAll();
+    analysisOutput.textContent = "선택한 기록을 삭제했습니다.";
+  } catch (error) {
+    analysisOutput.textContent = `기록 삭제 실패: ${error.message}`;
+    console.error(error);
+  }
+  return;
+
   records = records.filter((record) => record.id !== id);
   saveRecords();
   renderAll();
@@ -752,10 +840,25 @@ function shiftCalendarMonth(offset) {
   renderWorkoutEditor();
 }
 
-function saveWorkoutEntry() {
+async function saveWorkoutEntry() {
   const selected = getSelectedWorkoutDraft();
 
   if (!selected.mainSplit && !selected.cardio) {
+    try {
+      await apiFetchJson(`/api/workouts/${encodeURIComponent(selectedWorkoutDate)}`, {
+        method: "DELETE",
+      });
+      delete workouts[selectedWorkoutDate];
+      renderWorkoutSummary();
+      renderWorkoutCalendar();
+      renderWorkoutEditor();
+      analysisOutput.textContent = `${formatDate(selectedWorkoutDate)}을 운동하지 않은 날로 저장했습니다.`;
+    } catch (error) {
+      analysisOutput.textContent = `운동 기록 저장 실패: ${error.message}`;
+      console.error(error);
+    }
+    return;
+
     delete workouts[selectedWorkoutDate];
     saveWorkouts();
     renderWorkoutSummary();
@@ -765,6 +868,22 @@ function saveWorkoutEntry() {
     return;
   }
 
+  try {
+    const payload = await apiFetchJson(`/api/workouts/${encodeURIComponent(selectedWorkoutDate)}`, {
+      method: "PUT",
+      body: JSON.stringify(selected),
+    });
+    workouts[selectedWorkoutDate] = payload.workout;
+    renderWorkoutSummary();
+    renderWorkoutCalendar();
+    renderWorkoutEditor();
+    analysisOutput.textContent = `${formatDate(selectedWorkoutDate)} ${getWorkoutDisplayLabel(payload.workout)} 운동 기록을 저장했습니다.`;
+  } catch (error) {
+    analysisOutput.textContent = `운동 기록 저장 실패: ${error.message}`;
+    console.error(error);
+  }
+  return;
+
   workouts[selectedWorkoutDate] = selected;
   saveWorkouts();
   renderWorkoutSummary();
@@ -773,13 +892,28 @@ function saveWorkoutEntry() {
   analysisOutput.textContent = `${formatDate(selectedWorkoutDate)} ${getWorkoutDisplayLabel(selected)} 운동 기록을 저장했습니다.`;
 }
 
-function deleteWorkoutEntry() {
+async function deleteWorkoutEntry() {
   if (!workouts[selectedWorkoutDate]) {
     workoutEditorStatus.textContent = `${formatDate(selectedWorkoutDate)}에는 삭제할 운동 기록이 없습니다.`;
     setWorkoutSelection({ mainSplit: null, cardio: false });
     renderWorkoutEditorState();
     return;
   }
+
+  try {
+    await apiFetchJson(`/api/workouts/${encodeURIComponent(selectedWorkoutDate)}`, {
+      method: "DELETE",
+    });
+    delete workouts[selectedWorkoutDate];
+    renderWorkoutSummary();
+    renderWorkoutCalendar();
+    renderWorkoutEditor();
+    analysisOutput.textContent = `${formatDate(selectedWorkoutDate)} 운동 기록을 삭제했습니다.`;
+  } catch (error) {
+    analysisOutput.textContent = `운동 기록 삭제 실패: ${error.message}`;
+    console.error(error);
+  }
+  return;
 
   delete workouts[selectedWorkoutDate];
   saveWorkouts();

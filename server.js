@@ -1,7 +1,9 @@
 const http = require("node:http");
+const crypto = require("node:crypto");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
+const { Pool } = require("pg");
 
 const rootDir = __dirname;
 const publicFiles = new Map([
@@ -12,12 +14,21 @@ const publicFiles = new Map([
 ]);
 const ALLOWED_MODELS = ["gpt-5", "gpt-5-mini", "gpt-5-nano", "gpt-4.1", "gpt-4o"];
 const DEFAULT_MODEL = "gpt-5";
+const MAIN_SPLITS = ["PUSH", "PULL", "LEG"];
 
 loadEnv(path.join(rootDir, ".env"));
 
 const port = Number(process.env.PORT || 3000);
 const host = process.env.HOST || "0.0.0.0";
 const defaultModel = normalizeModel(process.env.OPENAI_MODEL);
+const database = createDatabasePool(process.env.DATABASE_URL);
+let databaseInitError = null;
+const databaseReadyPromise = database
+  ? initializeDatabase(database).catch((error) => {
+      databaseInitError = error;
+      console.error("Database initialization failed:", error);
+    })
+  : Promise.resolve();
 
 const server = http.createServer(async (request, response) => {
   try {
@@ -26,12 +37,45 @@ const server = http.createServer(async (request, response) => {
     if (request.method === "GET" && url.pathname === "/api/config") {
       return sendJson(response, 200, {
         hasApiKey: Boolean(process.env.OPENAI_API_KEY),
+        hasDatabase: Boolean(database),
         defaultModel,
       });
     }
 
     if (request.method === "GET" && url.pathname === "/api/models") {
       return handleModels(response);
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/data") {
+      return handleData(response);
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/records") {
+      return handleUpsertRecord(request, response);
+    }
+
+    if (request.method === "DELETE" && url.pathname === "/api/records") {
+      return handleDeleteAllRecords(response);
+    }
+
+    if (request.method === "DELETE" && url.pathname.startsWith("/api/records/")) {
+      return handleDeleteRecord(response, decodeURIComponent(url.pathname.slice("/api/records/".length)));
+    }
+
+    if (request.method === "PUT" && url.pathname === "/api/profile") {
+      return handleSaveProfile(request, response);
+    }
+
+    if (request.method === "PUT" && url.pathname.startsWith("/api/workouts/")) {
+      return handleSaveWorkout(
+        request,
+        response,
+        decodeURIComponent(url.pathname.slice("/api/workouts/".length))
+      );
+    }
+
+    if (request.method === "DELETE" && url.pathname.startsWith("/api/workouts/")) {
+      return handleDeleteWorkout(response, decodeURIComponent(url.pathname.slice("/api/workouts/".length)));
     }
 
     if (request.method === "GET" && url.pathname === "/health") {
@@ -61,12 +105,175 @@ server.listen(port, host, () => {
   });
 });
 
+async function handleData(response) {
+  const db = await requireDatabase(response);
+  if (!db) {
+    return;
+  }
+
+  const [recordsResult, workoutsResult, profileResult] = await Promise.all([
+    db.query(
+      `SELECT id, record_date, weight, body_fat, muscle, extract(epoch FROM created_at) * 1000 AS created_at
+       FROM inbody_records
+       ORDER BY record_date ASC`
+    ),
+    db.query(
+      `SELECT workout_date, main_split, cardio
+       FROM workout_entries
+       ORDER BY workout_date ASC`
+    ),
+    db.query(
+      `SELECT content
+       FROM profile_store
+       WHERE key = 'default'
+       LIMIT 1`
+    ),
+  ]);
+
+  const records = recordsResult.rows.map(formatRecordRow);
+  const workouts = workoutsResult.rows.reduce((accumulator, row) => {
+    accumulator[row.workout_date] = {
+      mainSplit: row.main_split || null,
+      cardio: Boolean(row.cardio),
+    };
+    return accumulator;
+  }, {});
+  const profile = profileResult.rows[0]?.content || "";
+
+  return sendJson(response, 200, { records, workouts, profile });
+}
+
+async function handleUpsertRecord(request, response) {
+  const db = await requireDatabase(response);
+  if (!db) {
+    return;
+  }
+
+  const body = await readJsonBody(request);
+  const record = sanitizeRecordInput(body);
+  if (!record) {
+    return sendJson(response, 400, { error: "Invalid record payload" });
+  }
+
+  const nextId = typeof body.id === "string" && body.id.trim() ? body.id.trim() : crypto.randomUUID();
+  const createdAt = Number.isFinite(Number(body.createdAt)) ? Number(body.createdAt) : Date.now();
+  const result = await db.query(
+    `INSERT INTO inbody_records (id, record_date, weight, body_fat, muscle, created_at)
+     VALUES ($1, $2, $3, $4, $5, to_timestamp($6 / 1000.0))
+     ON CONFLICT (record_date)
+     DO UPDATE SET
+       weight = EXCLUDED.weight,
+       body_fat = EXCLUDED.body_fat,
+       muscle = EXCLUDED.muscle
+     RETURNING id, record_date, weight, body_fat, muscle, extract(epoch FROM created_at) * 1000 AS created_at`,
+    [nextId, record.date, record.weight, record.bodyFat, record.muscle, createdAt]
+  );
+
+  return sendJson(response, 200, {
+    record: formatRecordRow(result.rows[0]),
+  });
+}
+
+async function handleDeleteAllRecords(response) {
+  const db = await requireDatabase(response);
+  if (!db) {
+    return;
+  }
+
+  await db.query("DELETE FROM inbody_records");
+  return sendJson(response, 200, { ok: true });
+}
+
+async function handleDeleteRecord(response, id) {
+  const db = await requireDatabase(response);
+  if (!db) {
+    return;
+  }
+
+  if (!id) {
+    return sendJson(response, 400, { error: "Record id is required" });
+  }
+
+  await db.query("DELETE FROM inbody_records WHERE id = $1", [id]);
+  return sendJson(response, 200, { ok: true });
+}
+
+async function handleSaveProfile(request, response) {
+  const db = await requireDatabase(response);
+  if (!db) {
+    return;
+  }
+
+  const body = await readJsonBody(request);
+  const content = typeof body.profile === "string" && body.profile.trim() ? body.profile.trim() : "";
+  const nextProfile = content || DEFAULT_PROFILE_TEXT;
+
+  await db.query(
+    `INSERT INTO profile_store (key, content)
+     VALUES ('default', $1)
+     ON CONFLICT (key)
+     DO UPDATE SET
+       content = EXCLUDED.content,
+       updated_at = now()`,
+    [nextProfile]
+  );
+
+  return sendJson(response, 200, { profile: nextProfile });
+}
+
+async function handleSaveWorkout(request, response, dateString) {
+  const db = await requireDatabase(response);
+  if (!db) {
+    return;
+  }
+
+  if (!isDateString(dateString)) {
+    return sendJson(response, 400, { error: "Invalid workout date" });
+  }
+
+  const body = await readJsonBody(request);
+  const workout = sanitizeWorkoutInput(body);
+  if (!workout || (!workout.mainSplit && !workout.cardio)) {
+    return sendJson(response, 400, { error: "Invalid workout payload" });
+  }
+
+  const result = await db.query(
+    `INSERT INTO workout_entries (workout_date, main_split, cardio)
+     VALUES ($1, $2, $3)
+     ON CONFLICT (workout_date)
+     DO UPDATE SET
+       main_split = EXCLUDED.main_split,
+       cardio = EXCLUDED.cardio,
+       updated_at = now()
+     RETURNING workout_date, main_split, cardio`,
+    [dateString, workout.mainSplit, workout.cardio]
+  );
+
+  return sendJson(response, 200, {
+    workout: formatWorkoutRow(result.rows[0]),
+  });
+}
+
+async function handleDeleteWorkout(response, dateString) {
+  const db = await requireDatabase(response);
+  if (!db) {
+    return;
+  }
+
+  if (!isDateString(dateString)) {
+    return sendJson(response, 400, { error: "Invalid workout date" });
+  }
+
+  await db.query("DELETE FROM workout_entries WHERE workout_date = $1", [dateString]);
+  return sendJson(response, 200, { ok: true });
+}
+
 async function handleAnalyze(request, response) {
   const body = await readJsonBody(request);
-  const latest = body.latest;
-  const trend = body.trend;
-  const records = Array.isArray(body.records) ? body.records : [];
-  const workouts = Array.isArray(body.workouts) ? body.workouts : [];
+  const latest = sanitizeLatestRecord(body.latest);
+  const trend = typeof body.trend === "string" ? body.trend.trim() : "";
+  const records = Array.isArray(body.records) ? body.records.map(sanitizeLatestRecord).filter(Boolean) : [];
+  const workouts = Array.isArray(body.workouts) ? body.workouts.map(sanitizeAnalysisWorkout).filter(Boolean) : [];
   const model = normalizeModel(body.model);
   const profile = typeof body.profile === "string" ? body.profile.trim() : "";
 
@@ -252,9 +459,7 @@ function formatWorkoutLabel(workout) {
 function buildRoutineFallback(latest, workouts) {
   const anchorDateString = latest?.date || getTodayLocalDateString();
   const recentTenDays = getRecentWorkoutsWithinDays(workouts, 10, anchorDateString);
-  const recentMainSplits = recentTenDays
-    .map((workout) => workout.mainSplit)
-    .filter(Boolean);
+  const recentMainSplits = recentTenDays.map((workout) => workout.mainSplit).filter(Boolean);
   const recommendedSplit = chooseRoutineSplit(anchorDateString, workouts);
   const exercises = getRoutineTemplate(recommendedSplit);
   const lastTwoSplits = recentMainSplits.slice(0, 2);
@@ -295,9 +500,7 @@ function chooseRoutineSplit(anchorDateString, workouts) {
     }
   });
 
-  const recentMainSplits = recentTenDays
-    .map((workout) => workout.mainSplit)
-    .filter(Boolean);
+  const recentMainSplits = recentTenDays.map((workout) => workout.mainSplit).filter(Boolean);
   const blocked = new Set(recentMainSplits.slice(0, 2));
   const order = ["PUSH", "PULL", "LEG"];
   const preferredOrder = [...order].sort((left, right) => {
@@ -364,7 +567,7 @@ function getRoutineTemplate(split) {
 }
 
 function parseDateString(dateString) {
-  if (typeof dateString !== "string" || !/^\d{4}-\d{2}-\d{2}$/u.test(dateString)) {
+  if (!isDateString(dateString)) {
     return null;
   }
 
@@ -378,21 +581,6 @@ function getTodayLocalDateString() {
   const month = String(now.getMonth() + 1).padStart(2, "0");
   const day = String(now.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
-}
-
-function getLocalIPv4Addresses() {
-  const interfaces = os.networkInterfaces();
-  const addresses = [];
-
-  Object.values(interfaces).forEach((entries) => {
-    (entries || []).forEach((entry) => {
-      if (entry && entry.family === "IPv4" && !entry.internal) {
-        addresses.push(entry.address);
-      }
-    });
-  });
-
-  return [...new Set(addresses)].sort();
 }
 
 function serveStatic(pathname, response) {
@@ -452,6 +640,168 @@ function loadEnv(filePath) {
       process.env[key] = value;
     }
   }
+}
+
+function createDatabasePool(databaseUrl) {
+  if (!databaseUrl) {
+    return null;
+  }
+
+  return new Pool({
+    connectionString: databaseUrl,
+    ssl: shouldUseDatabaseSsl(databaseUrl) ? { rejectUnauthorized: false } : undefined,
+  });
+}
+
+async function initializeDatabase(db) {
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS inbody_records (
+      id text PRIMARY KEY,
+      record_date date NOT NULL UNIQUE,
+      weight double precision NOT NULL,
+      body_fat double precision NOT NULL,
+      muscle double precision NOT NULL,
+      created_at timestamptz NOT NULL DEFAULT now()
+    );
+  `);
+
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS workout_entries (
+      workout_date date PRIMARY KEY,
+      main_split text,
+      cardio boolean NOT NULL DEFAULT false,
+      updated_at timestamptz NOT NULL DEFAULT now(),
+      CONSTRAINT workout_entries_main_split_check
+        CHECK (main_split IS NULL OR main_split IN ('PUSH', 'PULL', 'LEG'))
+    );
+  `);
+
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS profile_store (
+      key text PRIMARY KEY,
+      content text NOT NULL,
+      updated_at timestamptz NOT NULL DEFAULT now()
+    );
+  `);
+}
+
+async function requireDatabase(response) {
+  if (!database) {
+    sendJson(response, 503, { error: "DATABASE_URL is missing" });
+    return null;
+  }
+
+  await databaseReadyPromise;
+  if (databaseInitError) {
+    sendJson(response, 503, {
+      error: `Database initialization failed: ${databaseInitError.message}`,
+    });
+    return null;
+  }
+
+  return database;
+}
+
+function shouldUseDatabaseSsl(databaseUrl) {
+  if (!databaseUrl) {
+    return false;
+  }
+
+  const lower = databaseUrl.toLowerCase();
+  if (lower.includes("sslmode=disable")) {
+    return false;
+  }
+
+  return !lower.includes("localhost") && !lower.includes("127.0.0.1");
+}
+
+function sanitizeRecordInput(input) {
+  const date = typeof input?.date === "string" ? input.date : "";
+  const weight = Number(input?.weight);
+  const bodyFat = Number(input?.bodyFat);
+  const muscle = Number(input?.muscle);
+
+  if (!isDateString(date) || [weight, bodyFat, muscle].some((value) => !Number.isFinite(value))) {
+    return null;
+  }
+
+  return {
+    date,
+    weight,
+    bodyFat,
+    muscle,
+  };
+}
+
+function sanitizeLatestRecord(input) {
+  const record = sanitizeRecordInput(input);
+  if (!record) {
+    return null;
+  }
+
+  return {
+    date: record.date,
+    weight: Number(record.weight.toFixed(1)),
+    bodyFat: Number(record.bodyFat.toFixed(1)),
+    muscle: Number(record.muscle.toFixed(1)),
+  };
+}
+
+function sanitizeWorkoutInput(input) {
+  const mainSplit =
+    typeof input?.mainSplit === "string" && MAIN_SPLITS.includes(input.mainSplit.toUpperCase())
+      ? input.mainSplit.toUpperCase()
+      : null;
+  const cardio = Boolean(input?.cardio);
+
+  if (!mainSplit && !cardio) {
+    return null;
+  }
+
+  return {
+    mainSplit,
+    cardio,
+  };
+}
+
+function sanitizeAnalysisWorkout(input) {
+  if (!input || typeof input !== "object" || !isDateString(input.date)) {
+    return null;
+  }
+
+  const workout = sanitizeWorkoutInput(input);
+  if (!workout) {
+    return null;
+  }
+
+  return {
+    date: input.date,
+    mainSplit: workout.mainSplit,
+    cardio: workout.cardio,
+  };
+}
+
+function formatRecordRow(row) {
+  return {
+    id: row.id,
+    date: row.record_date,
+    weight: Number(row.weight),
+    bodyFat: Number(row.body_fat),
+    muscle: Number(row.muscle),
+    createdAt: Number(row.created_at),
+  };
+}
+
+function formatWorkoutRow(row) {
+  return {
+    date: row.workout_date,
+    mainSplit: row.main_split || null,
+    cardio: Boolean(row.cardio),
+  };
+}
+
+function isDateString(dateString) {
+  return typeof dateString === "string" && /^\d{4}-\d{2}-\d{2}$/u.test(dateString);
 }
 
 function normalizeModel(candidate) {
@@ -534,7 +884,7 @@ function parseJsonObject(text) {
     try {
       return JSON.parse(candidate);
     } catch {
-      // Continue to next parse candidate.
+      // Continue.
     }
   }
 
@@ -580,11 +930,31 @@ function normalizeRoutineSplit(split) {
     return candidate;
   }
 
-  if (candidate === "CARDIO" || candidate.includes("RECOVERY") || candidate.includes("CARDIO") || candidate.includes("REST")) {
+  if (
+    candidate === "CARDIO" ||
+    candidate.includes("RECOVERY") ||
+    candidate.includes("CARDIO") ||
+    candidate.includes("REST")
+  ) {
     return "RECOVERY";
   }
 
   return "";
+}
+
+function getLocalIPv4Addresses() {
+  const interfaces = os.networkInterfaces();
+  const addresses = [];
+
+  Object.values(interfaces).forEach((entries) => {
+    (entries || []).forEach((entry) => {
+      if (entry && entry.family === "IPv4" && !entry.internal) {
+        addresses.push(entry.address);
+      }
+    });
+  });
+
+  return [...new Set(addresses)].sort();
 }
 
 function sendJson(response, statusCode, payload) {
@@ -600,3 +970,33 @@ function sendBinary(response, statusCode, body, type) {
   response.writeHead(statusCode, { "Content-Type": type });
   response.end(body);
 }
+
+const DEFAULT_PROFILE_TEXT = `## 1. Basic Profile
+
+- Height: 180 cm
+- Weight: ~78 kg
+- Skeletal Muscle Mass: 40.6 kg
+- Goal: 근비대 중심 벌크업
+
+## 2. Training Routine
+
+- Training frequency: 거의 매일 웨이트 트레이닝
+- Typical workout time: 약 1~1.5시간
+- Training style: failure 근처까지 수행
+- Training time: 아침 운동
+
+## 3. Nutrition Strategy
+
+- 목표: calorie surplus 유지
+- 단백질: 충분히 섭취
+- 탄수화물: 추가로 늘리는 중
+- 식사 빈도: 하루 5끼
+
+## 4. Supplements
+
+- Creatine
+- Beta-alanine
+- Caffeine
+- Probiotics
+- L-arginine
+`;
