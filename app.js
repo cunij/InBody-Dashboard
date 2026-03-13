@@ -1013,6 +1013,8 @@ function renderRoutinePanel() {
   const isSavedDraft =
     Boolean(savedRoutine) && areRoutinesEqual(savedRoutine, routineDraft);
   const showSummary = isSavedDraft && isRoutineSummaryCollapsed;
+  const showDeleteButton =
+    !showSummary && (Boolean(savedRoutine) || routineDraft.items.length > 0);
 
   routineDateLabel.textContent = formatDate(selectedWorkoutDate);
   routineSearchInput.placeholder = `${routineDraft.split} 운동 검색`;
@@ -1028,6 +1030,12 @@ function renderRoutinePanel() {
   if (saveRoutineButton) {
     saveRoutineButton.hidden = showSummary;
   }
+
+  if (deleteRoutineButton) {
+    deleteRoutineButton.hidden = !showDeleteButton;
+  }
+
+  routineEditorStatus.hidden = showSummary;
 
   routineSplitButtons.forEach((button) => {
     const isActive = button.dataset.routineSplit === routineDraft.split;
@@ -2268,50 +2276,32 @@ function buildLocalEvaluation({
   const previous = data[data.length - 2];
   const lines = [];
   const usesPreviousRecord = latest.date !== analysisDate;
+  const prompt = userQuery || "선택 날짜 기준으로 가장 중요한 점만 간단히 평가해줘.";
 
-  lines.push("1) 현재 상태");
-  lines.push(`${formatDate(analysisDate)} 기준 평가입니다.`);
+  lines.push(`요청 기준: ${prompt}`);
+
   if (usesPreviousRecord) {
     lines.push(
-      `선택 날짜 인바디 기록이 없어 ${formatDate(latest.date)} 기록을 기준 수치로 사용했습니다.`,
+      `${formatDate(analysisDate)} 인바디 기록이 없어 ${formatDate(latest.date)} 기록을 기준으로 봤습니다.`,
     );
-  }
-  lines.push(
-    `${formatDate(latest.date)} 기록 기준 체중 ${latest.weight.toFixed(1)}kg, 체지방률 ${latest.bodyFat.toFixed(
-      1,
-    )}%, 골격근량 ${latest.muscle.toFixed(1)}kg입니다.`,
-  );
-  if (trend) {
-    lines.push(`직전 변화: ${trend}.`);
-  }
-  if (userQuery) {
-    lines.push(`추가 요청: ${userQuery}`);
   }
 
   if (!previous) {
-    lines.push("");
-    lines.push("2) 루틴 평가");
     if (routine) {
       lines.push(
-        `${formatDate(analysisDate)} 저장 루틴은 ${routine.split} 분할, ${routine.items.length}개 종목, 실패지점 세트 비율 ${routine.failureSetRatio}%입니다.`,
+        `${formatDate(latest.date)} 기준 체중 ${latest.weight.toFixed(1)}kg, 체지방률 ${latest.bodyFat.toFixed(1)}%, 골격근량 ${latest.muscle.toFixed(1)}kg입니다. ${formatDate(analysisDate)} 루틴은 ${routine.split} ${routine.items.length}종목, 실패지점 세트 ${routine.failureSetRatio}%입니다.`,
       );
     } else {
       lines.push(
-        `${formatDate(analysisDate)}에 저장된 루틴이 없어 루틴 평가는 제한적입니다.`,
+        `${formatDate(latest.date)} 기준 체중 ${latest.weight.toFixed(1)}kg, 체지방률 ${latest.bodyFat.toFixed(1)}%, 골격근량 ${latest.muscle.toFixed(1)}kg입니다. ${formatDate(analysisDate)} 루틴이 없어 운동 구성 평가는 제한적입니다.`,
       );
     }
-    lines.push("");
-    lines.push("3) 다음 행동 제안");
-    lines.push(
-      "선택 날짜 전후로 같은 조건의 인바디 기록을 2회 이상 더 남기면 변화 해석이 더 정확해집니다.",
-    );
-    lines.push(
-      "식단과 영양제 루틴도 함께 기록해두면 다음 평가에서 해석 정확도가 올라갑니다.",
-    );
     if (!routine) {
       lines.push(
-        `${formatDate(analysisDate)} 루틴도 함께 저장하면 운동 구성까지 같이 볼 수 있습니다.`,
+        `${formatDate(analysisDate)} 루틴과 식단 메모를 같이 남기면 다음 평가는 더 정확해집니다.`,
       );
+    } else if (trend) {
+      lines.push(`직전 변화는 ${trend}입니다.`);
     }
     if (errorMessage) {
       lines.push(`AI 호출 실패: ${errorMessage}`);
@@ -2322,38 +2312,35 @@ function buildLocalEvaluation({
   const fatDelta = latest.bodyFat - previous.bodyFat;
   const muscleDelta = latest.muscle - previous.muscle;
 
-  lines.push("");
-  lines.push("2) 루틴 평가");
+  let action = "현재 흐름을 유지하되 수면과 운동 강도의 일관성을 관리하세요.";
+  if (muscleDelta < 0) {
+    action = "회복 상태와 전체 훈련 빈도를 먼저 점검하세요.";
+  } else if (fatDelta > 0) {
+    action = "총 섭취 칼로리와 간식 빈도, 유산소 수행량을 같이 점검하세요.";
+  }
+
   if (routine) {
     lines.push(
-      `${formatDate(analysisDate)} 저장 루틴은 ${routine.split} 분할 ${routine.items.length}개 종목, 실패지점 수행 세트 비율 ${routine.failureSetRatio}%입니다.`,
+      `${formatDate(latest.date)} 기준 체중 ${latest.weight.toFixed(1)}kg, 체지방률 ${latest.bodyFat.toFixed(1)}%, 골격근량 ${latest.muscle.toFixed(1)}kg이고 직전 변화는 ${trend}입니다.`,
     );
     lines.push(
-      "세트 수와 반복 수, 중량이 꾸준히 기록되면 체성분 변화와 루틴 적합도를 더 명확하게 해석할 수 있습니다.",
+      `${formatDate(analysisDate)} 루틴은 ${routine.split} ${routine.items.length}종목, 실패지점 수행 세트 ${routine.failureSetRatio}%입니다.`,
     );
   } else {
     lines.push(
-      `${formatDate(analysisDate)}에 저장된 루틴이 없어 루틴 평가는 제한적입니다.`,
+      `${formatDate(latest.date)} 기준 체중 ${latest.weight.toFixed(1)}kg, 체지방률 ${latest.bodyFat.toFixed(1)}%, 골격근량 ${latest.muscle.toFixed(1)}kg이고 직전 변화는 ${trend}입니다.`,
+    );
+    lines.push(
+      `${formatDate(analysisDate)} 루틴이 없어 운동 구성 평가는 제한적입니다.`,
     );
   }
 
-  lines.push("");
-  lines.push("3) 다음 행동 제안");
-  if (muscleDelta < 0) {
-    lines.push("회복 상태와 하체 포함 전체 훈련 빈도를 먼저 점검하세요.");
-  } else if (fatDelta > 0) {
-    lines.push("총 섭취 칼로리와 간식 빈도, 유산소 수행량을 함께 점검하세요.");
-  } else {
-    lines.push("현재 흐름을 유지하되 수면과 운동 강도의 일관성을 관리하세요.");
-  }
+  lines.push(action);
   if (!routine) {
     lines.push(
-      `${formatDate(analysisDate)} 루틴을 함께 저장해두면 다음 평가에서 운동 구성까지 같이 볼 수 있습니다.`,
+      `${formatDate(analysisDate)} 루틴을 같이 저장해두면 다음 답변이 더 정확해집니다.`,
     );
   }
-  lines.push(
-    "프로필에 저장한 식단 전략과 영양제 루틴도 같이 점검하면 해석이 더 현실적입니다.",
-  );
   if (errorMessage) {
     lines.push(`AI 호출 실패: ${errorMessage}`);
   }
