@@ -1,0 +1,95 @@
+{
+  "records": [
+    {
+      "id": "b33e46e9-b258-45c3-a98b-b45f28407a5d",
+      "date": "2025-08-03",
+      "weight": 75.2,
+      "bodyFat": 10.5,
+      "muscle": 38.5,
+      "createdAt": 1773370707835
+    },
+    {
+      "id": "04cebc34-bf30-43cb-bb45-26a03b5a1f9a",
+      "date": "2025-09-30",
+      "weight": 75.2,
+      "bodyFat": 10.5,
+      "muscle": 38.5,
+      "createdAt": 1773370793592
+    },
+    {
+      "id": "f003fe20-ebf8-468b-a826-99f584b902e5",
+      "date": "2025-10-01",
+      "weight": 74.6,
+      "bodyFat": 9.2,
+      "muscle": 38.9,
+      "createdAt": 1773370816349
+    },
+    {
+      "id": "8e1722c2-0b79-43f8-aaa1-2860d9d2fa97",
+      "date": "2025-12-01",
+      "weight": 78.2,
+      "bodyFat": 10,
+      "muscle": 40.6,
+      "createdAt": 1773370835984
+    }
+  ],
+  "workouts": {
+    "2026-03-11": {
+      "mainSplit": "PUSH",
+      "cardio": false
+    },
+    "2026-03-05": {
+      "mainSplit": "LEG",
+      "cardio": false
+    },
+    "2026-03-06": {
+      "mainSplit": "PULL",
+      "cardio": false
+    },
+    "2026-03-07": {
+      "mainSplit": "PUSH",
+      "cardio": false
+    },
+    "2026-03-09": {
+      "mainSplit": "LEG",
+      "cardio": false
+    },
+    "2026-03-10": {
+      "mainSplit": "PULL",
+      "cardio": false
+    },
+    "2026-03-02": {
+      "mainSplit": "PUSH",
+      "cardio": false
+    },
+    "2026-03-01": {
+      "mainSplit": "PULL",
+      "cardio": false
+    },
+    "2026-02-21": {
+      "mainSplit": "PULL",
+      "cardio": false
+    },
+    "2026-02-22": {
+      "mainSplit": "LEG",
+      "cardio": false
+    },
+    "2026-02-23": {
+      "mainSplit": "PUSH",
+      "cardio": false
+    },
+    "2026-02-25": {
+      "mainSplit": "LEG",
+      "cardio": false
+    },
+    "2026-02-26": {
+      "mainSplit": "PULL",
+      "cardio": false
+    },
+    "2026-02-27": {
+      "mainSplit": "PUSH",
+      "cardio": false
+    }
+  },
+  "profile": "## 1. Basic Profile\n\n- Height: 180 cm\n- Weight: ~78 kg (벌크업 진행 중, 최근 75~78kg 변동)\n- Skeletal Muscle Mass: 40.6 kg\n- Goal: 근비대 중심 벌크업\n\n## 2. Training Routine\n\n- Training frequency: 거의 매일 웨이트 트레이닝\n- Typical workout time: 약 1~1.5시간\n- Training style:\n  - 대부분 failure 근처까지 수행\n  - 가슴: 약 12 sets\n  - 어깨: 약 8 sets\n  - 삼두: 약 5 sets\n- Training time: 아침 운동\n\n## 3. Daily Schedule\n\n- Wake: 06:00\n- Sleep: 22:00\n- Meals: 하루 5끼\n- Example:\n  - 06:00: 밥 200g, 닭가슴살 100g, 카페인 200mg\n  - 07:00-08:30: 웨이트 트레이닝\n  - 09:00: 학식\n  - 12:00: 학식\n  - 18:00: 버거킹 와퍼 세트\n  - 21:00: 밥 200g, 닭가슴살 100g\n\n+단백질 20g 3스쿱\n\n## 4. Nutrition Strategy\n\n- 목표: 칼로리 surplus 유지\n- 단백질: 충분히 섭취\n- 탄수화물: 추가로 늘리는 중\n- 식사 빈도: 5 meals/day\n\n## 5. Supplements\n\n- Creatine\n- Caffeine (pre-workout)\n- Probiotics\n-비타민 D3\n비타민 c 6g 메가도스\n오메가 3\n마그네슘\n\n\n\n\n## 6. Lifestyle Priorities\n\n- 루틴 안정성 매우 중요하게 생각\n- 운동 루틴 유지가 삶의 중심\n- 수면 8시간 확보\n- 사회 활동(술자리 등)은 선호하지 않음"
+}

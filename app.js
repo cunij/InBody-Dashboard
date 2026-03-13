@@ -1,4 +1,8 @@
 const SETTINGS_KEY = "inbody-tracker-settings";
+const LEGACY_RECORDS_KEY = "inbody-tracker-records";
+const LEGACY_WORKOUTS_KEY = "inbody-workouts";
+const LEGACY_PROFILE_KEY = "inbody-profile";
+const LEGACY_MIGRATION_FLAG = "inbody-legacy-migrated";
 const ALLOWED_MODELS = [
   "gpt-5",
   "gpt-5-mini",
@@ -263,12 +267,24 @@ function saveSettingsData(nextSettings) {
 async function loadPersistedData() {
   try {
     const payload = await apiFetchJson("/api/data");
-    records = sanitizeRecords(payload.records);
-    workouts = sanitizeWorkouts(payload.workouts);
-    profileContent =
+    const remoteProfile =
       typeof payload.profile === "string" && payload.profile.trim()
         ? payload.profile
-        : DEFAULT_PROFILE;
+        : "";
+    records = sanitizeRecords(payload.records);
+    workouts = sanitizeWorkouts(payload.workouts);
+    profileContent = remoteProfile || DEFAULT_PROFILE;
+    if (
+      records.length === 0 &&
+      Object.keys(workouts).length === 0 &&
+      !remoteProfile &&
+      shouldRunLegacyMigration()
+    ) {
+      const migrated = await migrateLegacyLocalData();
+      if (migrated) {
+        return loadPersistedData();
+      }
+    }
     renderProfile();
     renderAll();
   } catch (error) {
@@ -299,6 +315,66 @@ async function apiFetchJson(url, options = {}) {
   return payload;
 }
 
+function shouldRunLegacyMigration() {
+  if (localStorage.getItem(LEGACY_MIGRATION_FLAG) === "done") {
+    return false;
+  }
+
+  const legacyRecords = localStorage.getItem(LEGACY_RECORDS_KEY);
+  const legacyWorkouts = localStorage.getItem(LEGACY_WORKOUTS_KEY);
+  const legacyProfile = localStorage.getItem(LEGACY_PROFILE_KEY);
+
+  return Boolean(legacyRecords || legacyWorkouts || legacyProfile);
+}
+
+async function migrateLegacyLocalData() {
+  const legacyRecords = sanitizeRecords(readLegacyJson(LEGACY_RECORDS_KEY, []));
+  const legacyWorkouts = sanitizeWorkouts(readLegacyJson(LEGACY_WORKOUTS_KEY, {}));
+  const legacyProfile = String(localStorage.getItem(LEGACY_PROFILE_KEY) || "").trim();
+
+  if (
+    legacyRecords.length === 0 &&
+    Object.keys(legacyWorkouts).length === 0 &&
+    !legacyProfile
+  ) {
+    localStorage.setItem(LEGACY_MIGRATION_FLAG, "done");
+    return false;
+  }
+
+  for (const record of legacyRecords) {
+    await apiFetchJson("/api/records", {
+      method: "POST",
+      body: JSON.stringify(record),
+    });
+  }
+
+  for (const [date, workout] of Object.entries(legacyWorkouts)) {
+    await apiFetchJson(`/api/workouts/${encodeURIComponent(date)}`, {
+      method: "PUT",
+      body: JSON.stringify(workout),
+    });
+  }
+
+  if (legacyProfile) {
+    await apiFetchJson("/api/profile", {
+      method: "PUT",
+      body: JSON.stringify({ profile: legacyProfile }),
+    });
+  }
+
+  localStorage.setItem(LEGACY_MIGRATION_FLAG, "done");
+  analysisOutput.textContent = "예전 브라우저 데이터를 DB로 옮겼습니다.";
+  return true;
+}
+
+function readLegacyJson(key, fallbackValue) {
+  try {
+    return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallbackValue));
+  } catch {
+    return fallbackValue;
+  }
+}
+
 function sanitizeRecords(raw) {
   if (!Array.isArray(raw)) {
     return [];
@@ -306,16 +382,19 @@ function sanitizeRecords(raw) {
 
   return raw
     .filter((entry) => entry && typeof entry === "object")
-    .map((entry) => ({
-      id: String(entry.id || "").trim(),
-      date: String(entry.date || "").trim(),
-      weight: Number(entry.weight),
-      bodyFat: Number(entry.bodyFat),
-      muscle: Number(entry.muscle),
-      createdAt: Number.isFinite(Number(entry.createdAt))
-        ? Number(entry.createdAt)
-        : Date.now(),
-    }))
+    .map((entry) => {
+      const normalizedDate = normalizeDateValue(entry.date);
+      return {
+        id: String(entry.id || "").trim(),
+        date: normalizedDate,
+        weight: Number(entry.weight),
+        bodyFat: Number(entry.bodyFat),
+        muscle: Number(entry.muscle),
+        createdAt: Number.isFinite(Number(entry.createdAt))
+          ? Number(entry.createdAt)
+          : Date.now(),
+      };
+    })
     .filter(
       (entry) =>
         entry.id &&
@@ -332,7 +411,8 @@ function sanitizeWorkouts(raw) {
 
   const normalized = {};
   Object.entries(raw).forEach(([date, entry]) => {
-    if (!isDateString(date) || !entry || typeof entry !== "object") {
+    const normalizedDate = normalizeDateValue(date);
+    if (!normalizedDate || !entry || typeof entry !== "object") {
       return;
     }
 
@@ -340,7 +420,7 @@ function sanitizeWorkouts(raw) {
       typeof entry.split === "string" &&
       MAIN_WORKOUT_SPLITS.includes(entry.split)
     ) {
-      normalized[date] = { mainSplit: entry.split, cardio: false };
+      normalized[normalizedDate] = { mainSplit: entry.split, cardio: false };
       return;
     }
 
@@ -355,7 +435,7 @@ function sanitizeWorkouts(raw) {
       return;
     }
 
-    normalized[date] = { mainSplit, cardio };
+    normalized[normalizedDate] = { mainSplit, cardio };
   });
 
   return normalized;
@@ -1762,6 +1842,28 @@ function toDateString(date) {
 
 function isDateString(value) {
   return /^\d{4}-\d{2}-\d{2}$/u.test(value);
+}
+
+function normalizeDateValue(value) {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return "";
+  }
+
+  if (isDateString(trimmed)) {
+    return trimmed;
+  }
+
+  const directDate = new Date(trimmed);
+  if (!Number.isNaN(directDate.getTime())) {
+    return toDateString(directDate);
+  }
+
+  return "";
 }
 
 function escapeHtml(value) {
