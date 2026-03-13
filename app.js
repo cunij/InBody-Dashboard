@@ -1122,6 +1122,10 @@ function renderRoutineSummary(routine) {
     return;
   }
 
+  const totalSets = routine.items.reduce(
+    (sum, item) => sum + getRoutineSetCount(item.sets),
+    0,
+  );
   const items = routine.items
     .map(
       (item) => `
@@ -1137,7 +1141,7 @@ function renderRoutineSummary(routine) {
     <div class="routine-summary-head">
       <span class="routine-summary-pill">${escapeHtml(routine.split)}</span>
       <span class="routine-summary-pill">실패지점 세트 ${routine.failureSetRatio}%</span>
-      <span class="routine-summary-pill">${routine.items.length}개 종목</span>
+      <span class="routine-summary-pill">총 ${totalSets}세트</span>
     </div>
     <div class="routine-summary-list">
       ${items}
@@ -1152,6 +1156,11 @@ function formatRoutineItemSummary(item) {
   }
 
   return parts.filter(Boolean).join(" · ");
+}
+
+function getRoutineSetCount(value) {
+  const match = String(value || "").match(/\d+/u);
+  return match ? Number(match[0]) : 0;
 }
 
 function renderRoutineEditorState() {
@@ -2306,7 +2315,7 @@ function buildLocalEvaluation({
     if (errorMessage) {
       lines.push(`AI 호출 실패: ${errorMessage}`);
     }
-    return lines.join("\n");
+    return lines.join("\n\n");
   }
 
   const fatDelta = latest.bodyFat - previous.bodyFat;
@@ -2345,7 +2354,7 @@ function buildLocalEvaluation({
     lines.push(`AI 호출 실패: ${errorMessage}`);
   }
 
-  return lines.join("\n");
+  return lines.join("\n\n");
 }
 
 function normalizeRoutine(routine) {

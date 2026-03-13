@@ -462,6 +462,7 @@ function buildPrompt(
     "Return a short, direct answer focused only on the user's query.",
     "Keep the answer concise and high-signal, usually within 2 to 5 short sentences.",
     "Do not force a fixed template or numbered sections.",
+    "Split the answer into 2 or 3 short paragraphs with blank lines when it improves readability.",
     "If the user provides an additional query, prioritize answering that query directly.",
     "If the user query is broad or empty, give only the most important summary and next point.",
     "When profile information includes diet, calorie surplus, protein intake, meal frequency, or supplements, reflect them directly in the analysis.",
