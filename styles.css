@@ -593,6 +593,61 @@ button:active {
   gap: 16px;
 }
 
+.routine-summary {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--panel-strong) 94%, transparent 6%);
+}
+
+.routine-summary-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.routine-summary-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--accent) 12%, var(--panel-strong) 88%);
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.routine-summary-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.routine-summary-item {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--panel-strong) 88%, transparent 12%);
+}
+
+.routine-summary-item strong {
+  color: var(--text);
+  font-size: 0.94rem;
+}
+
+.routine-summary-item span {
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
 .routine-split-toggle {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

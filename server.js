@@ -341,6 +341,7 @@ async function handleDeleteRoutine(response, dateString) {
 async function handleAnalyze(request, response) {
   const body = await readJsonBody(request);
   const latest = sanitizeLatestRecord(body.latest);
+  const analysisDate = isDateString(body.analysisDate) ? body.analysisDate : latest?.date || "";
   const trend = typeof body.trend === "string" ? body.trend.trim() : "";
   const records = Array.isArray(body.records) ? body.records.map(sanitizeLatestRecord).filter(Boolean) : [];
   const workouts = Array.isArray(body.workouts) ? body.workouts.map(sanitizeAnalysisWorkout).filter(Boolean) : [];
@@ -359,6 +360,7 @@ async function handleAnalyze(request, response) {
   }
 
   const prompt = buildPrompt(
+    analysisDate,
     latest,
     trend,
     records,
@@ -415,6 +417,7 @@ async function handleAnalyze(request, response) {
 }
 
 function buildPrompt(
+  analysisDate,
   latest,
   trend,
   records,
@@ -451,7 +454,7 @@ function buildPrompt(
     ? `루틴 날짜 ${routineDate}, 분할 ${routine.split}, 실패지점 수행 세트 비율 ${
         failureSetRatio === null ? "미지정" : `${failureSetRatio}%`
       }`
-    : `루틴 날짜 ${routineDate || latest.date}, 저장된 루틴 없음`;
+    : `루틴 날짜 ${routineDate || analysisDate || latest.date}, 저장된 루틴 없음`;
 
   const sections = [
     "You evaluate InBody trends for a bodybuilding-focused dashboard.",
@@ -460,9 +463,13 @@ function buildPrompt(
     "If the user provides an additional query, answer it directly inside the required three sections.",
     "When profile information includes diet, calorie surplus, protein intake, meal frequency, or supplements, reflect them directly in the analysis.",
     "In section 2, evaluate the saved workout routine for exercise selection, volume, repetition targets, and the failure-set ratio.",
-    "If no saved routine exists for the latest record date, explicitly say that the routine is missing and explain what information should be added.",
+    "If no saved routine exists for the selected calendar date, explicitly say that the routine is missing and explain what information should be added.",
     "The next-action section must include at least one concrete note about training execution or nutrition when that information is available.",
     "Do not use markdown, bullet lists, or JSON.",
+    `Selected calendar date: ${analysisDate || latest.date}`,
+    analysisDate && analysisDate !== latest.date
+      ? `No InBody record exists on the selected calendar date. Use ${latest.date} as the latest previous body-composition record while evaluating the routine and workouts around ${analysisDate}.`
+      : `The selected calendar date and body-composition reference date are both ${latest.date}.`,
     `최신 기록: 날짜 ${latest.date}, 체중 ${latest.weight}kg, 체지방률 ${latest.bodyFat}%, 골격근량 ${latest.muscle}kg`,
     `직전 변화 요약: ${trend}`,
   ];

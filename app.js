@@ -1,4 +1,4 @@
-const SETTINGS_KEY = "inbody-tracker-settings";
+﻿const SETTINGS_KEY = "inbody-tracker-settings";
 const LEGACY_RECORDS_KEY = "inbody-tracker-records";
 const LEGACY_WORKOUTS_KEY = "inbody-workouts";
 const LEGACY_PROFILE_KEY = "inbody-profile";
@@ -115,10 +115,13 @@ const analysisQueryInput = document.getElementById("analysis-query");
 const themeToggle = document.getElementById("theme-toggle");
 const heroStack = document.getElementById("hero-stack");
 const routineDateLabel = document.getElementById("routine-date-label");
+const routineBuilder = document.getElementById("routine-builder");
 const routineSearchInput = document.getElementById("routine-search");
 const routineSearchResults = document.getElementById("routine-search-results");
 const routineItems = document.getElementById("routine-items");
+const routineSummary = document.getElementById("routine-summary");
 const routineEditorStatus = document.getElementById("routine-editor-status");
+const editRoutineButton = document.getElementById("edit-routine");
 const saveRoutineButton = document.getElementById("save-routine");
 const deleteRoutineButton = document.getElementById("delete-routine");
 const failureSetRatioInput = document.getElementById("failure-set-ratio");
@@ -229,6 +232,7 @@ let selectedWorkoutDate = getTodayLocalDate();
 let currentCalendarDate = getMonthAnchor(selectedWorkoutDate);
 let routineDraftDate = "";
 let routineDraft = createRoutineDraft({ date: selectedWorkoutDate });
+let isRoutineSummaryCollapsed = false;
 let chartStates = {
   weight: createEmptyChartState("weight"),
   bodyFat: createEmptyChartState("bodyFat"),
@@ -303,6 +307,9 @@ function bindEvents() {
   }
   if (saveRoutineButton) {
     saveRoutineButton.addEventListener("click", saveDailyRoutine);
+  }
+  if (editRoutineButton) {
+    editRoutineButton.addEventListener("click", openRoutineEditor);
   }
   if (deleteRoutineButton) {
     deleteRoutineButton.addEventListener("click", deleteDailyRoutine);
@@ -989,9 +996,11 @@ function renderWorkoutEditorState() {
 function renderRoutinePanel() {
   if (
     !routineDateLabel ||
+    !routineBuilder ||
     !routineSearchInput ||
     !routineSearchResults ||
     !routineItems ||
+    !routineSummary ||
     !routineEditorStatus ||
     !failureSetRatioInput ||
     !failureSetRatioValue
@@ -1000,18 +1009,39 @@ function renderRoutinePanel() {
   }
 
   syncRoutineDraftWithSelectedDate();
+  const savedRoutine = dailyRoutines[selectedWorkoutDate] || null;
+  const isSavedDraft =
+    Boolean(savedRoutine) && areRoutinesEqual(savedRoutine, routineDraft);
+  const showSummary = isSavedDraft && isRoutineSummaryCollapsed;
+
   routineDateLabel.textContent = formatDate(selectedWorkoutDate);
   routineSearchInput.placeholder = `${routineDraft.split} 운동 검색`;
   failureSetRatioInput.value = String(routineDraft.failureSetRatio);
   failureSetRatioValue.textContent = `${routineDraft.failureSetRatio}%`;
+  routineBuilder.hidden = showSummary;
+  routineSummary.hidden = !showSummary;
+
+  if (editRoutineButton) {
+    editRoutineButton.hidden = !showSummary;
+  }
+
+  if (saveRoutineButton) {
+    saveRoutineButton.hidden = showSummary;
+  }
 
   routineSplitButtons.forEach((button) => {
     const isActive = button.dataset.routineSplit === routineDraft.split;
     button.setAttribute("aria-pressed", isActive ? "true" : "false");
   });
 
-  renderRoutineSearchResults();
-  renderRoutineItems();
+  if (showSummary) {
+    renderRoutineSummary(savedRoutine);
+  } else {
+    routineSummary.innerHTML = "";
+    renderRoutineSearchResults();
+    renderRoutineItems();
+  }
+
   renderRoutineEditorState();
 }
 
@@ -1079,6 +1109,43 @@ function renderRoutineItems() {
     .join("");
 }
 
+function renderRoutineSummary(routine) {
+  if (!routineSummary || !routine) {
+    return;
+  }
+
+  const items = routine.items
+    .map(
+      (item) => `
+        <article class="routine-summary-item">
+          <strong>${escapeHtml(item.name)}</strong>
+          <span>${escapeHtml(formatRoutineItemSummary(item))}</span>
+        </article>
+      `,
+    )
+    .join("");
+
+  routineSummary.innerHTML = `
+    <div class="routine-summary-head">
+      <span class="routine-summary-pill">${escapeHtml(routine.split)}</span>
+      <span class="routine-summary-pill">실패지점 세트 ${routine.failureSetRatio}%</span>
+      <span class="routine-summary-pill">${routine.items.length}개 종목</span>
+    </div>
+    <div class="routine-summary-list">
+      ${items}
+    </div>
+  `;
+}
+
+function formatRoutineItemSummary(item) {
+  const parts = [item.sets, item.reps];
+  if (item.weight) {
+    parts.push(item.weight);
+  }
+
+  return parts.filter(Boolean).join(" · ");
+}
+
 function renderRoutineEditorState() {
   const savedRoutine = dailyRoutines[selectedWorkoutDate] || null;
 
@@ -1116,10 +1183,12 @@ function loadRoutineDraft(dateString) {
   const savedRoutine = dailyRoutines[dateString];
   if (savedRoutine) {
     routineDraft = cloneRoutine(savedRoutine);
+    isRoutineSummaryCollapsed = true;
     saveSettingsData({ activeRoutineSplit: savedRoutine.split });
     return;
   }
 
+  isRoutineSummaryCollapsed = false;
   routineDraft = createRoutineDraft({
     split: getPreferredRoutineSplit(),
   });
@@ -1131,8 +1200,14 @@ function setRoutineDraftSplit(split) {
   }
 
   syncRoutineDraftWithSelectedDate();
+  isRoutineSummaryCollapsed = false;
   routineDraft.split = split;
   saveSettingsData({ activeRoutineSplit: split });
+  renderRoutinePanel();
+}
+
+function openRoutineEditor() {
+  isRoutineSummaryCollapsed = false;
   renderRoutinePanel();
 }
 
@@ -1143,6 +1218,7 @@ function handleRoutineSearchClick(event) {
   }
 
   syncRoutineDraftWithSelectedDate();
+  isRoutineSummaryCollapsed = false;
   routineDraft.items.push(createRoutineItem(button.dataset.addExercise));
   routineSearchInput.value = "";
   renderRoutinePanel();
@@ -1156,6 +1232,7 @@ function handleRoutineItemInput(event) {
   }
 
   syncRoutineDraftWithSelectedDate();
+  isRoutineSummaryCollapsed = false;
   const item = routineDraft.items.find((candidate) => candidate.id === itemId);
   if (!item) {
     return;
@@ -1172,6 +1249,7 @@ function handleRoutineItemClick(event) {
   }
 
   syncRoutineDraftWithSelectedDate();
+  isRoutineSummaryCollapsed = false;
   routineDraft.items = routineDraft.items.filter(
     (item) => item.id !== button.dataset.deleteRoutineItem,
   );
@@ -1180,6 +1258,7 @@ function handleRoutineItemClick(event) {
 
 function handleFailureSetRatioInput() {
   syncRoutineDraftWithSelectedDate();
+  isRoutineSummaryCollapsed = false;
   routineDraft.failureSetRatio = Number(failureSetRatioInput.value);
   failureSetRatioValue.textContent = `${routineDraft.failureSetRatio}%`;
   renderRoutineEditorState();
@@ -1223,6 +1302,7 @@ async function saveDailyRoutine() {
     );
     dailyRoutines[selectedWorkoutDate] = sanitizeRoutineValue(response.routine);
     loadRoutineDraft(selectedWorkoutDate);
+    isRoutineSummaryCollapsed = true;
     renderRoutinePanel();
     analysisOutput.textContent = `${formatDate(selectedWorkoutDate)} 루틴을 저장했습니다.`;
   } catch (error) {
@@ -1234,6 +1314,7 @@ async function saveDailyRoutine() {
 async function deleteDailyRoutine() {
   const savedRoutine = dailyRoutines[selectedWorkoutDate];
   if (!savedRoutine) {
+    isRoutineSummaryCollapsed = false;
     loadRoutineDraft(selectedWorkoutDate);
     renderRoutinePanel();
     return;
@@ -1247,6 +1328,7 @@ async function deleteDailyRoutine() {
       },
     );
     delete dailyRoutines[selectedWorkoutDate];
+    isRoutineSummaryCollapsed = false;
     loadRoutineDraft(selectedWorkoutDate);
     renderRoutinePanel();
     analysisOutput.textContent = `${formatDate(selectedWorkoutDate)} 루틴을 삭제했습니다.`;
@@ -2066,20 +2148,21 @@ function handleWindowResize() {
 
 async function generateAnalysis() {
   if (records.length === 0) {
-    analysisOutput.textContent = "평가할 기록이 없습니다.";
+    analysisOutput.textContent = "평가할 인바디 기록이 없습니다.";
     return;
   }
 
-  analysisOutput.textContent = "평가를 생성하고 있습니다...";
+  const analysisContext = getSelectedAnalysisContext();
+  if (!analysisContext) {
+    analysisOutput.textContent = `${formatDate(selectedWorkoutDate)} 기준으로 평가할 인바디 기록이 없습니다. 선택 날짜 이전에 저장한 인바디 기록을 먼저 남겨주세요.`;
+    return;
+  }
 
-  const latest = getSortedRecordsDesc()[0];
-  const trend = buildTrendSummary();
+  analysisOutput.textContent = `${formatDate(selectedWorkoutDate)} 기준 평가를 생성하고 있습니다...`;
+
+  const { analysisDate, latest, trend, analysisRecords, recentWorkouts, routine } =
+    analysisContext;
   const profile = loadProfile();
-  const recentWorkouts = getRecentWorkoutEntries(
-    WORKOUT_LOOKBACK_DAYS,
-    latest.date,
-  );
-  const latestRoutine = dailyRoutines[latest.date] || null;
   const userQuery = analysisQueryInput?.value.trim() || "";
 
   try {
@@ -2089,19 +2172,20 @@ async function generateAnalysis() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        analysisDate,
         latest,
         trend,
-        records: [...records].sort(sortByDate).slice(-8),
+        records: analysisRecords,
         profile,
         workouts: recentWorkouts,
-        routineDate: latest.date,
-        routine: latestRoutine
+        routineDate: analysisDate,
+        routine: routine
           ? {
-              split: latestRoutine.split,
-              items: latestRoutine.items,
+              split: routine.split,
+              items: routine.items,
             }
           : null,
-        failureSetRatio: latestRoutine?.failureSetRatio ?? null,
+        failureSetRatio: routine?.failureSetRatio ?? null,
         userQuery,
       }),
     });
@@ -2118,25 +2202,29 @@ async function generateAnalysis() {
     const result = await response.json();
     analysisOutput.textContent = result.analysis;
   } catch (error) {
-    analysisOutput.textContent = buildLocalEvaluation(
+    analysisOutput.textContent = buildLocalEvaluation({
+      analysisDate,
       latest,
       trend,
-      latestRoutine,
-      error.message,
+      routine,
+      errorMessage: error.message,
       userQuery,
-    );
+    });
     console.error(error);
   }
 }
 
-function buildTrendSummary() {
-  const data = [...records].sort(sortByDate);
-  if (data.length === 1) {
+function buildTrendSummaryForRecords(sortedRecords) {
+  if (!sortedRecords.length) {
+    return "";
+  }
+
+  if (sortedRecords.length === 1) {
     return "비교할 이전 기록이 없어 첫 기록 기준입니다.";
   }
 
-  const latest = data[data.length - 1];
-  const previous = data[data.length - 2];
+  const latest = sortedRecords[sortedRecords.length - 1];
+  const previous = sortedRecords[sortedRecords.length - 2];
 
   return [
     describeDelta("체중", latest.weight - previous.weight, "kg"),
@@ -2145,50 +2233,86 @@ function buildTrendSummary() {
   ].join(", ");
 }
 
-function buildLocalEvaluation(
+function getSelectedAnalysisContext() {
+  const analysisRecords = [...records]
+    .sort(sortByDate)
+    .filter((record) => record.date <= selectedWorkoutDate);
+  if (!analysisRecords.length) {
+    return null;
+  }
+
+  return {
+    analysisDate: selectedWorkoutDate,
+    latest: analysisRecords[analysisRecords.length - 1],
+    trend: buildTrendSummaryForRecords(analysisRecords),
+    analysisRecords: analysisRecords.slice(-8),
+    recentWorkouts: getRecentWorkoutEntries(
+      WORKOUT_LOOKBACK_DAYS,
+      selectedWorkoutDate,
+    ),
+    routine: dailyRoutines[selectedWorkoutDate] || null,
+  };
+}
+
+function buildLocalEvaluation({
+  analysisDate,
   latest,
   trend,
   routine,
   errorMessage = "",
   userQuery = "",
-) {
-  const data = [...records].sort(sortByDate);
+}) {
+  const data = [...records]
+    .sort(sortByDate)
+    .filter((record) => record.date <= analysisDate);
   const previous = data[data.length - 2];
   const lines = [];
+  const usesPreviousRecord = latest.date !== analysisDate;
 
   lines.push("1) 현재 상태");
+  lines.push(`${formatDate(analysisDate)} 기준 평가입니다.`);
+  if (usesPreviousRecord) {
+    lines.push(
+      `선택 날짜 인바디 기록이 없어 ${formatDate(latest.date)} 기록을 기준 수치로 사용했습니다.`,
+    );
+  }
   lines.push(
-    `${formatDate(latest.date)} 기준 체중 ${latest.weight.toFixed(1)}kg, 체지방률 ${latest.bodyFat.toFixed(
+    `${formatDate(latest.date)} 기록 기준 체중 ${latest.weight.toFixed(1)}kg, 체지방률 ${latest.bodyFat.toFixed(
       1,
     )}%, 골격근량 ${latest.muscle.toFixed(1)}kg입니다.`,
   );
   if (trend) {
-    lines.push(`최근 변화: ${trend}.`);
+    lines.push(`직전 변화: ${trend}.`);
+  }
+  if (userQuery) {
+    lines.push(`추가 요청: ${userQuery}`);
   }
 
   if (!previous) {
-    if (userQuery) {
-      lines.push(`입력한 쿼리: ${userQuery}`);
-    }
     lines.push("");
     lines.push("2) 루틴 평가");
     if (routine) {
       lines.push(
-        `${routine.split} 루틴 ${routine.items.length}개 종목과 실패지점 세트 비율 ${routine.failureSetRatio}%가 저장되어 있습니다.`,
+        `${formatDate(analysisDate)} 저장 루틴은 ${routine.split} 분할, ${routine.items.length}개 종목, 실패지점 세트 비율 ${routine.failureSetRatio}%입니다.`,
       );
     } else {
       lines.push(
-        "최신 기록 날짜에 저장된 루틴이 없어 루틴 평가는 제한적입니다.",
+        `${formatDate(analysisDate)}에 저장된 루틴이 없어 루틴 평가는 제한적입니다.`,
       );
     }
     lines.push("");
     lines.push("3) 다음 행동 제안");
     lines.push(
-      "주 1회 같은 조건으로 3회 이상 추적하면 더 정확한 평가가 가능합니다.",
+      "선택 날짜 전후로 같은 조건의 인바디 기록을 2회 이상 더 남기면 변화 해석이 더 정확해집니다.",
     );
     lines.push(
       "식단과 영양제 루틴도 함께 기록해두면 다음 평가에서 해석 정확도가 올라갑니다.",
     );
+    if (!routine) {
+      lines.push(
+        `${formatDate(analysisDate)} 루틴도 함께 저장하면 운동 구성까지 같이 볼 수 있습니다.`,
+      );
+    }
     if (errorMessage) {
       lines.push(`AI 호출 실패: ${errorMessage}`);
     }
@@ -2197,38 +2321,34 @@ function buildLocalEvaluation(
 
   const fatDelta = latest.bodyFat - previous.bodyFat;
   const muscleDelta = latest.muscle - previous.muscle;
-  const weightDelta = latest.weight - previous.weight;
 
-  if (userQuery) {
-    lines.push(`입력한 쿼리: ${userQuery}`);
-  }
   lines.push("");
   lines.push("2) 루틴 평가");
   if (routine) {
     lines.push(
-      `${routine.split} 루틴 ${routine.items.length}개 종목, 실패지점 수행 세트 비율 ${routine.failureSetRatio}%가 저장되어 있습니다.`,
+      `${formatDate(analysisDate)} 저장 루틴은 ${routine.split} 분할 ${routine.items.length}개 종목, 실패지점 수행 세트 비율 ${routine.failureSetRatio}%입니다.`,
     );
     lines.push(
       "세트 수와 반복 수, 중량이 꾸준히 기록되면 체성분 변화와 루틴 적합도를 더 명확하게 해석할 수 있습니다.",
     );
   } else {
-    lines.push("최신 기록 날짜에 저장된 루틴이 없어 루틴 평가는 제한적입니다.");
+    lines.push(
+      `${formatDate(analysisDate)}에 저장된 루틴이 없어 루틴 평가는 제한적입니다.`,
+    );
   }
 
   lines.push("");
   lines.push("3) 다음 행동 제안");
   if (muscleDelta < 0) {
-    lines.push("단백질 섭취와 하체·전신 운동 빈도를 먼저 확인하세요.");
+    lines.push("회복 상태와 하체 포함 전체 훈련 빈도를 먼저 점검하세요.");
   } else if (fatDelta > 0) {
-    lines.push("총 섭취 칼로리와 간식 패턴, 유산소 활동량을 함께 확인하세요.");
+    lines.push("총 섭취 칼로리와 간식 빈도, 유산소 수행량을 함께 점검하세요.");
   } else {
-    lines.push(
-      "현재 패턴을 유지하면서 수면과 운동 강도의 일관성을 관리하세요.",
-    );
+    lines.push("현재 흐름을 유지하되 수면과 운동 강도의 일관성을 관리하세요.");
   }
   if (!routine) {
     lines.push(
-      "최신 기록 날짜 루틴을 함께 저장해두면 다음 평가에서 운동 구성까지 같이 볼 수 있습니다.",
+      `${formatDate(analysisDate)} 루틴을 함께 저장해두면 다음 평가에서 운동 구성까지 같이 볼 수 있습니다.`,
     );
   }
   lines.push(
@@ -2579,3 +2699,4 @@ function getTodayLocalDate() {
   const offset = today.getTimezoneOffset() * 60000;
   return new Date(today.getTime() - offset).toISOString().slice(0, 10);
 }
+

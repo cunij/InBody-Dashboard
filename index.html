@@ -223,7 +223,7 @@
             >
           </div>
 
-          <div class="routine-builder">
+          <div id="routine-builder" class="routine-builder">
             <div
               class="routine-split-toggle"
               role="tablist"
@@ -288,7 +288,17 @@
             <div id="routine-items" class="routine-items"></div>
           </div>
 
+          <div id="routine-summary" class="routine-summary" hidden></div>
+
           <div class="form-actions">
+            <button
+              type="button"
+              id="edit-routine"
+              class="secondary"
+              hidden
+            >
+              루틴 수정
+            </button>
             <button type="button" id="save-routine" class="primary">
               루틴 저장
             </button>
