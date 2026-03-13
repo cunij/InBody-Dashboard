@@ -591,7 +591,11 @@ function serveStatic(pathname, response) {
 
   const filePath = path.join(rootDir, fileName);
   const file = fs.readFileSync(filePath);
-  return sendBinary(response, 200, file, contentType(fileName));
+  return sendBinary(response, 200, file, contentType(fileName), {
+    "Cache-Control": "no-store, no-cache, must-revalidate",
+    Pragma: "no-cache",
+    Expires: "0",
+  });
 }
 
 function readJsonBody(request) {
@@ -961,13 +965,13 @@ function sendJson(response, statusCode, payload) {
   return sendText(response, statusCode, JSON.stringify(payload), "application/json; charset=utf-8");
 }
 
-function sendText(response, statusCode, body, type) {
-  response.writeHead(statusCode, { "Content-Type": type });
+function sendText(response, statusCode, body, type, headers = {}) {
+  response.writeHead(statusCode, { "Content-Type": type, ...headers });
   response.end(body);
 }
 
-function sendBinary(response, statusCode, body, type) {
-  response.writeHead(statusCode, { "Content-Type": type });
+function sendBinary(response, statusCode, body, type, headers = {}) {
+  response.writeHead(statusCode, { "Content-Type": type, ...headers });
   response.end(body);
 }
 

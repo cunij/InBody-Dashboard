@@ -93,6 +93,35 @@ textarea {
   font-weight: 800;
 }
 
+.hero-stack {
+  position: relative;
+  --hero-title-shift: 0px;
+}
+
+.hero-title,
+.hero-calendar {
+  will-change: transform, opacity;
+}
+
+.hero-stack.is-scroll-scene {
+  margin-bottom: 20px;
+}
+
+.hero-stack.is-scroll-scene .hero-title {
+  position: sticky;
+  top: clamp(18px, 3vw, 28px);
+  z-index: 1;
+  transform-origin: top left;
+  transform: translate3d(0, var(--hero-title-shift), 0);
+}
+
+.hero-stack.is-scroll-scene .hero-calendar {
+  position: relative;
+  top: auto;
+  z-index: 3;
+  margin-top: 0;
+}
+
 .theme-toggle {
   position: relative;
   border: 1px solid var(--line);
@@ -1094,6 +1123,10 @@ th {
 
   .panel-head-inline {
     flex-wrap: wrap;
+  }
+
+  .hero-stack.is-scroll-scene .hero-title {
+    top: 12px;
   }
 
   .panel-head-inline .status-line {

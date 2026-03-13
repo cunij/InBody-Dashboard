@@ -68,6 +68,7 @@ const DEFAULT_PROFILE = `## 1. Basic Profile
 - 사회 활동(술자리 등)은 선호하지 않음`;
 
 const form = document.getElementById("inbody-form");
+const dateInput = document.getElementById("date");
 const historyBody = document.getElementById("history-body");
 const latestSummary = document.getElementById("latest-summary");
 const analysisOutput = document.getElementById("analysis-output");
@@ -75,6 +76,7 @@ const routineOutput = document.getElementById("routine-output");
 const modelSelect = document.getElementById("model");
 const serverStatus = document.getElementById("server-status");
 const themeToggle = document.getElementById("theme-toggle");
+const heroStack = document.getElementById("hero-stack");
 const profileText = document.getElementById("profile-text");
 const profileStatus = document.getElementById("profile-status");
 const profilePanel = document.querySelector(".profile-panel");
@@ -105,6 +107,7 @@ const chartModalTitle = document.getElementById("chart-modal-title");
 const chartModalCanvas = document.getElementById("chart-modal-canvas");
 const chartModalTooltip = document.getElementById("chart-modal-tooltip");
 const chartModalStage = chartModalCanvas.parentElement;
+const reducedMotionMedia = window.matchMedia("(prefers-reduced-motion: reduce)");
 
 const chartElements = {
   weight: {
@@ -181,17 +184,19 @@ let chartStates = {
 let modalChartState = createEmptyChartState("");
 let activeModalMetric = "";
 let modalHideTimer = 0;
+let heroSceneFrame = 0;
 
 bootstrap();
 
 async function bootstrap() {
-  document.getElementById("date").value = getTodayLocalDate();
+  setDateInputValue();
   applySavedTheme();
   renderServerStatus("loading");
   renderModelOptions(ALLOWED_MODELS, normalizeModel(loadSettings().model));
   renderProfile();
   renderAll();
   bindEvents();
+  syncHeroScrollScene();
   await loadServerConfig();
   await loadPersistedData();
   await loadModelOptions();
@@ -199,6 +204,8 @@ async function bootstrap() {
 
 function bindEvents() {
   form.addEventListener("submit", handleSubmit);
+  dateInput.addEventListener("blur", normalizeDateInput);
+  dateInput.addEventListener("input", clearDateInputValidity);
   document
     .getElementById("reset-storage")
     .addEventListener("click", resetStorage);
@@ -242,8 +249,14 @@ function bindEvents() {
   chartModalCanvas.addEventListener("pointerleave", () =>
     hideTooltip(chartModalTooltip),
   );
+  window.addEventListener("scroll", handleWindowScroll, { passive: true });
   window.addEventListener("keydown", handleGlobalKeydown);
   window.addEventListener("resize", handleWindowResize);
+  if (typeof reducedMotionMedia.addEventListener === "function") {
+    reducedMotionMedia.addEventListener("change", syncHeroScrollScene);
+  } else if (typeof reducedMotionMedia.addListener === "function") {
+    reducedMotionMedia.addListener(syncHeroScrollScene);
+  }
 }
 
 function loadSettings() {
@@ -637,9 +650,19 @@ async function handleSubmit(event) {
   event.preventDefault();
 
   const formData = new FormData(form);
+  const normalizedDate = normalizeDateValue(formData.get("date"));
+  if (!normalizedDate) {
+    dateInput.setCustomValidity("Use YYYY-MM-DD.");
+    dateInput.reportValidity();
+    analysisOutput.textContent = "Enter the date as YYYY-MM-DD.";
+    return;
+  }
+
+  clearDateInputValidity();
+  setDateInputValue(normalizedDate);
   const entry = {
     id: crypto.randomUUID(),
-    date: formData.get("date"),
+    date: normalizedDate,
     weight: Number(formData.get("weight")),
     bodyFat: Number(formData.get("bodyFat")),
     muscle: Number(formData.get("muscle")),
@@ -665,7 +688,7 @@ async function handleSubmit(event) {
     ].sort(sortByDate);
     renderAll();
     form.reset();
-    document.getElementById("date").value = getTodayLocalDate();
+    setDateInputValue();
     analysisOutput.textContent =
       "기록을 저장했습니다. 평가 생성 버튼으로 최신 상태를 다시 확인하세요.";
   } catch (error) {
@@ -681,7 +704,7 @@ async function handleSubmit(event) {
   saveRecords();
   renderAll();
   form.reset();
-  document.getElementById("date").value = getTodayLocalDate();
+  setDateInputValue();
   analysisOutput.textContent =
     "기록을 저장했습니다. 평가 생성 버튼으로 해석을 확인할 수 있습니다.";
 }
@@ -1495,7 +1518,82 @@ function handleGlobalKeydown(event) {
   }
 }
 
+function handleWindowScroll() {
+  if (!heroStack || !heroStack.classList.contains("is-scroll-scene")) {
+    return;
+  }
+
+  queueHeroSceneUpdate();
+}
+
+function syncHeroScrollScene() {
+  if (!heroStack) {
+    return;
+  }
+
+  const enableScene = !reducedMotionMedia.matches;
+  heroStack.classList.toggle("is-scroll-scene", enableScene);
+
+  if (!enableScene) {
+    if (heroSceneFrame) {
+      cancelAnimationFrame(heroSceneFrame);
+      heroSceneFrame = 0;
+    }
+    applyHeroSceneProgress(0);
+    return;
+  }
+
+  queueHeroSceneUpdate();
+}
+
+function queueHeroSceneUpdate() {
+  if (heroSceneFrame) {
+    return;
+  }
+
+  heroSceneFrame = requestAnimationFrame(() => {
+    heroSceneFrame = 0;
+    updateHeroScrollScene();
+  });
+}
+
+function updateHeroScrollScene() {
+  if (!heroStack || !heroStack.classList.contains("is-scroll-scene")) {
+    return;
+  }
+
+  const rect = heroStack.getBoundingClientRect();
+  const viewportHeight =
+    window.innerHeight || document.documentElement.clientHeight;
+  const scrollTop = window.scrollY || window.pageYOffset || 0;
+  const sceneStart = scrollTop + rect.top;
+  const sceneTravel = Math.max(
+    rect.height * 0.58,
+    viewportHeight * 0.52,
+  );
+  const rawProgress = clamp((scrollTop - sceneStart) / sceneTravel, 0, 1);
+  const titleProgress = easeOutCubic(rawProgress * 0.78);
+
+  applyHeroSceneProgress(titleProgress);
+}
+
+function applyHeroSceneProgress(titleProgress) {
+  if (!heroStack) {
+    return;
+  }
+
+  heroStack.style.setProperty(
+    "--hero-title-shift",
+    `${Math.round(mapValue(titleProgress, 0, 1, 0, -72))}px`,
+  );
+}
+
+function easeOutCubic(value) {
+  return 1 - (1 - clamp(value, 0, 1)) ** 3;
+}
+
 function handleWindowResize() {
+  syncHeroScrollScene();
   renderWorkoutCalendar();
   renderCharts();
 }
@@ -1860,6 +1958,24 @@ function toDateString(date) {
   return `${year}-${month}-${day}`;
 }
 
+function setDateInputValue(dateString = getTodayLocalDate()) {
+  dateInput.value = dateString;
+  clearDateInputValidity();
+}
+
+function clearDateInputValidity() {
+  dateInput.setCustomValidity("");
+}
+
+function normalizeDateInput() {
+  const normalized = normalizeDateValue(dateInput.value);
+  if (!normalized) {
+    return;
+  }
+
+  setDateInputValue(normalized);
+}
+
 function isDateString(value) {
   return /^\d{4}-\d{2}-\d{2}$/u.test(value);
 }
@@ -1878,12 +1994,53 @@ function normalizeDateValue(value) {
     return trimmed;
   }
 
+  const compactMatch = trimmed.match(/^(\d{4})(\d{2})(\d{2})$/u);
+  if (compactMatch) {
+    return buildDateString(
+      Number(compactMatch[1]),
+      Number(compactMatch[2]),
+      Number(compactMatch[3]),
+    );
+  }
+
+  const looseMatch = trimmed
+    .replace(/[./]/gu, "-")
+    .replace(/\s+/gu, "")
+    .replace(/년/gu, "-")
+    .replace(/월/gu, "-")
+    .replace(/일/gu, "")
+    .match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/u);
+  if (looseMatch) {
+    return buildDateString(
+      Number(looseMatch[1]),
+      Number(looseMatch[2]),
+      Number(looseMatch[3]),
+    );
+  }
+
   const directDate = new Date(trimmed);
   if (!Number.isNaN(directDate.getTime())) {
     return toDateString(directDate);
   }
 
   return "";
+}
+
+function buildDateString(year, month, day) {
+  if (![year, month, day].every(Number.isInteger)) {
+    return "";
+  }
+
+  const date = new Date(year, month - 1, day);
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return "";
+  }
+
+  return toDateString(date);
 }
 
 function escapeHtml(value) {

@@ -14,12 +14,13 @@
   </head>
   <body>
     <div class="page-shell">
-      <header class="topbar">
-        <h1>InBody Dashboard</h1>
+      <div class="hero-stack" id="hero-stack">
+        <header class="topbar hero-title">
+          <h1>InBody Dashboard</h1>
         <button type="button" id="theme-toggle" class="theme-toggle">다크 모드</button>
-      </header>
+        </header>
 
-      <section class="panel calendar-panel">
+        <section class="panel calendar-panel hero-calendar">
         <div class="panel-head panel-head-inline">
           <div>
             <h2>운동 캘린더</h2>
@@ -99,7 +100,8 @@
             <p id="workout-editor-status" class="calendar-editor-status"></p>
           </aside>
         </div>
-      </section>
+        </section>
+      </div>
 
       <section class="panel summary-panel">
         <p class="section-label">최근 기록</p>
@@ -117,7 +119,15 @@
           <form id="inbody-form" class="data-form stacked-form">
             <label>
               날짜
-              <input type="date" id="date" name="date" required />
+              <input
+                type="text"
+                id="date"
+                name="date"
+                inputmode="numeric"
+                autocomplete="off"
+                placeholder="YYYY-MM-DD"
+                required
+              />
             </label>
             <label>
               체중 (kg)
