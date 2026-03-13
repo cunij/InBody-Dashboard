@@ -565,6 +565,23 @@ button:active {
   font-weight: 700;
 }
 
+.analysis-query-field {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.analysis-query-label {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.analysis-query-input {
+  min-height: 112px;
+  max-height: 240px;
+  resize: vertical;
+}
+
 .routine-date-label {
   font-size: 0.98rem;
   font-weight: 800;

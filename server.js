@@ -348,6 +348,7 @@ async function handleAnalyze(request, response) {
   const routineDate = isDateString(body.routineDate) ? body.routineDate : "";
   const routine = sanitizeAnalysisRoutine(body.routine);
   const failureSetRatio = sanitizeFailureSetRatio(body.failureSetRatio);
+  const userQuery = typeof body.userQuery === "string" ? body.userQuery.trim() : "";
 
   if (!latest || !trend) {
     return sendJson(response, 400, { error: "latest and trend are required" });
@@ -365,7 +366,8 @@ async function handleAnalyze(request, response) {
     workouts,
     routineDate,
     routine,
-    failureSetRatio
+    failureSetRatio,
+    userQuery
   );
 
   try {
@@ -420,7 +422,8 @@ function buildPrompt(
   workouts,
   routineDate,
   routine,
-  failureSetRatio
+  failureSetRatio,
+  userQuery
 ) {
   const recordLines = records.length
     ? records
@@ -454,6 +457,7 @@ function buildPrompt(
     "You evaluate InBody trends for a bodybuilding-focused dashboard.",
     "Respond in Korean.",
     'Return plain text with exactly these three numbered sections: "1) 현재 상태", "2) 루틴 평가", "3) 다음 행동 제안".',
+    "If the user provides an additional query, answer it directly inside the required three sections.",
     "When profile information includes diet, calorie surplus, protein intake, meal frequency, or supplements, reflect them directly in the analysis.",
     "In section 2, evaluate the saved workout routine for exercise selection, volume, repetition targets, and the failure-set ratio.",
     "If no saved routine exists for the latest record date, explicitly say that the routine is missing and explain what information should be added.",
@@ -466,6 +470,10 @@ function buildPrompt(
   if (profile) {
     sections.push("사용자 생활 방식 & 목표:");
     sections.push(profile);
+  }
+
+  if (userQuery) {
+    sections.push(`사용자 추가 쿼리: ${userQuery}`);
   }
 
   if (workoutSummary) {

@@ -111,6 +111,7 @@ const latestSummary = document.getElementById("latest-summary");
 const analysisOutput = document.getElementById("analysis-output");
 const serverStatus = document.getElementById("server-status");
 const analysisModelBadge = document.getElementById("analysis-model");
+const analysisQueryInput = document.getElementById("analysis-query");
 const themeToggle = document.getElementById("theme-toggle");
 const heroStack = document.getElementById("hero-stack");
 const routineDateLabel = document.getElementById("routine-date-label");
@@ -246,6 +247,11 @@ async function bootstrap() {
   if (analysisModelBadge) {
     analysisModelBadge.textContent = "GPT-5 mini";
   }
+  if (analysisQueryInput) {
+    const savedAnalysisQuery = loadSettings().analysisQuery;
+    analysisQueryInput.value =
+      typeof savedAnalysisQuery === "string" ? savedAnalysisQuery : "";
+  }
   renderServerStatus("loading");
   renderProfile();
   renderAll();
@@ -271,6 +277,11 @@ function bindEvents() {
   document
     .getElementById("run-analysis")
     .addEventListener("click", generateAnalysis);
+  if (analysisQueryInput) {
+    analysisQueryInput.addEventListener("input", () =>
+      saveSettingsData({ analysisQuery: analysisQueryInput.value }),
+    );
+  }
   themeToggle.addEventListener("click", toggleTheme);
   routineSplitButtons.forEach((button) => {
     button.addEventListener("click", () =>
@@ -2069,6 +2080,7 @@ async function generateAnalysis() {
     latest.date,
   );
   const latestRoutine = dailyRoutines[latest.date] || null;
+  const userQuery = analysisQueryInput?.value.trim() || "";
 
   try {
     const response = await fetch("/api/analyze", {
@@ -2090,6 +2102,7 @@ async function generateAnalysis() {
             }
           : null,
         failureSetRatio: latestRoutine?.failureSetRatio ?? null,
+        userQuery,
       }),
     });
 
@@ -2110,6 +2123,7 @@ async function generateAnalysis() {
       trend,
       latestRoutine,
       error.message,
+      userQuery,
     );
     console.error(error);
   }
@@ -2131,7 +2145,13 @@ function buildTrendSummary() {
   ].join(", ");
 }
 
-function buildLocalEvaluation(latest, trend, routine, errorMessage = "") {
+function buildLocalEvaluation(
+  latest,
+  trend,
+  routine,
+  errorMessage = "",
+  userQuery = "",
+) {
   const data = [...records].sort(sortByDate);
   const previous = data[data.length - 2];
   const lines = [];
@@ -2147,6 +2167,9 @@ function buildLocalEvaluation(latest, trend, routine, errorMessage = "") {
   }
 
   if (!previous) {
+    if (userQuery) {
+      lines.push(`입력한 쿼리: ${userQuery}`);
+    }
     lines.push("");
     lines.push("2) 루틴 평가");
     if (routine) {
@@ -2176,6 +2199,9 @@ function buildLocalEvaluation(latest, trend, routine, errorMessage = "") {
   const muscleDelta = latest.muscle - previous.muscle;
   const weightDelta = latest.weight - previous.weight;
 
+  if (userQuery) {
+    lines.push(`입력한 쿼리: ${userQuery}`);
+  }
   lines.push("");
   lines.push("2) 루틴 평가");
   if (routine) {
