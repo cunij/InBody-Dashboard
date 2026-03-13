@@ -223,7 +223,7 @@
             >
           </div>
 
-          <div class="routine-builder">
+          <div id="routine-builder" class="routine-builder">
             <div
               class="routine-split-toggle"
               role="tablist"
@@ -288,7 +288,17 @@
             <div id="routine-items" class="routine-items"></div>
           </div>
 
+          <div id="routine-summary" class="routine-summary" hidden></div>
+
           <div class="form-actions">
+            <button
+              type="button"
+              id="edit-routine"
+              class="secondary"
+              hidden
+            >
+              루틴 수정
+            </button>
             <button type="button" id="save-routine" class="primary">
               루틴 저장
             </button>
@@ -301,7 +311,7 @@
         </section>
 
         <section class="panel ai-panel">
-          <div class="panel-head">
+          <div class="panel-head panel-head-inline">
             <div class="analysis-heading">
               <h2>AI 평가</h2>
               <span id="analysis-model" class="analysis-model-label">GPT-5 mini</span>
@@ -310,6 +320,15 @@
               서버 설정을 확인하고 있습니다...
             </p>
           </div>
+
+          <label class="analysis-query-field">
+            <span class="analysis-query-label">AI 쿼리</span>
+            <textarea
+              id="analysis-query"
+              class="analysis-query-input"
+              placeholder="예: 오늘 기록 기준으로 벌크 방향이 맞는지, 루틴 볼륨이 과한지 같이 봐줘"
+            ></textarea>
+          </label>
 
           <div class="form-actions">
             <button type="button" id="run-analysis" class="primary">

@@ -341,6 +341,7 @@ async function handleDeleteRoutine(response, dateString) {
 async function handleAnalyze(request, response) {
   const body = await readJsonBody(request);
   const latest = sanitizeLatestRecord(body.latest);
+  const analysisDate = isDateString(body.analysisDate) ? body.analysisDate : latest?.date || "";
   const trend = typeof body.trend === "string" ? body.trend.trim() : "";
   const records = Array.isArray(body.records) ? body.records.map(sanitizeLatestRecord).filter(Boolean) : [];
   const workouts = Array.isArray(body.workouts) ? body.workouts.map(sanitizeAnalysisWorkout).filter(Boolean) : [];
@@ -348,6 +349,7 @@ async function handleAnalyze(request, response) {
   const routineDate = isDateString(body.routineDate) ? body.routineDate : "";
   const routine = sanitizeAnalysisRoutine(body.routine);
   const failureSetRatio = sanitizeFailureSetRatio(body.failureSetRatio);
+  const userQuery = typeof body.userQuery === "string" ? body.userQuery.trim() : "";
 
   if (!latest || !trend) {
     return sendJson(response, 400, { error: "latest and trend are required" });
@@ -358,6 +360,7 @@ async function handleAnalyze(request, response) {
   }
 
   const prompt = buildPrompt(
+    analysisDate,
     latest,
     trend,
     records,
@@ -365,7 +368,8 @@ async function handleAnalyze(request, response) {
     workouts,
     routineDate,
     routine,
-    failureSetRatio
+    failureSetRatio,
+    userQuery
   );
 
   try {
@@ -413,6 +417,7 @@ async function handleAnalyze(request, response) {
 }
 
 function buildPrompt(
+  analysisDate,
   latest,
   trend,
   records,
@@ -420,7 +425,8 @@ function buildPrompt(
   workouts,
   routineDate,
   routine,
-  failureSetRatio
+  failureSetRatio,
+  userQuery
 ) {
   const recordLines = records.length
     ? records
@@ -448,17 +454,26 @@ function buildPrompt(
     ? `루틴 날짜 ${routineDate}, 분할 ${routine.split}, 실패지점 수행 세트 비율 ${
         failureSetRatio === null ? "미지정" : `${failureSetRatio}%`
       }`
-    : `루틴 날짜 ${routineDate || latest.date}, 저장된 루틴 없음`;
+    : `루틴 날짜 ${routineDate || analysisDate || latest.date}, 저장된 루틴 없음`;
 
   const sections = [
     "You evaluate InBody trends for a bodybuilding-focused dashboard.",
     "Respond in Korean.",
-    'Return plain text with exactly these three numbered sections: "1) 현재 상태", "2) 루틴 평가", "3) 다음 행동 제안".',
+    "Return a short, direct answer focused only on the user's query.",
+    "Keep the answer concise and high-signal, usually within 2 to 5 short sentences.",
+    "Do not force a fixed template or numbered sections.",
+    "Split the answer into 2 or 3 short paragraphs with blank lines when it improves readability.",
+    "If the user provides an additional query, prioritize answering that query directly.",
+    "If the user query is broad or empty, give only the most important summary and next point.",
     "When profile information includes diet, calorie surplus, protein intake, meal frequency, or supplements, reflect them directly in the analysis.",
-    "In section 2, evaluate the saved workout routine for exercise selection, volume, repetition targets, and the failure-set ratio.",
-    "If no saved routine exists for the latest record date, explicitly say that the routine is missing and explain what information should be added.",
-    "The next-action section must include at least one concrete note about training execution or nutrition when that information is available.",
+    "When relevant, evaluate the saved workout routine for exercise selection, volume, repetition targets, and the failure-set ratio.",
+    "If no saved routine exists for the selected calendar date, explicitly say that the routine is missing and explain what information should be added.",
+    "When useful, include one concrete action about training execution or nutrition.",
     "Do not use markdown, bullet lists, or JSON.",
+    `Selected calendar date: ${analysisDate || latest.date}`,
+    analysisDate && analysisDate !== latest.date
+      ? `No InBody record exists on the selected calendar date. Use ${latest.date} as the latest previous body-composition record while evaluating the routine and workouts around ${analysisDate}.`
+      : `The selected calendar date and body-composition reference date are both ${latest.date}.`,
     `최신 기록: 날짜 ${latest.date}, 체중 ${latest.weight}kg, 체지방률 ${latest.bodyFat}%, 골격근량 ${latest.muscle}kg`,
     `직전 변화 요약: ${trend}`,
   ];
@@ -466,6 +481,10 @@ function buildPrompt(
   if (profile) {
     sections.push("사용자 생활 방식 & 목표:");
     sections.push(profile);
+  }
+
+  if (userQuery) {
+    sections.push(`사용자 추가 쿼리: ${userQuery}`);
   }
 
   if (workoutSummary) {
