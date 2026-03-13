@@ -295,9 +295,15 @@ function bindEvents() {
   if (deleteRoutineButton) {
     deleteRoutineButton.addEventListener("click", deleteDailyRoutine);
   }
-  toggleProfileEditorButton.addEventListener("click", toggleProfileEditor);
-  saveProfileButton.addEventListener("click", saveProfile);
-  profileText.addEventListener("input", () => setProfileStatus("edited"));
+  if (toggleProfileEditorButton) {
+    toggleProfileEditorButton.addEventListener("click", toggleProfileEditor);
+  }
+  if (saveProfileButton) {
+    saveProfileButton.addEventListener("click", saveProfile);
+  }
+  if (profileText) {
+    profileText.addEventListener("input", () => setProfileStatus("edited"));
+  }
 
   calendarPrev.addEventListener("click", () => shiftCalendarMonth(-1));
   calendarNext.addEventListener("click", () => shiftCalendarMonth(1));
@@ -577,6 +583,10 @@ function loadProfile() {
 }
 
 async function saveProfile() {
+  if (!profileText) {
+    return;
+  }
+
   const nextProfile = profileText.value.trim() || DEFAULT_PROFILE;
   try {
     const payload = await apiFetchJson("/api/profile", {
@@ -595,12 +605,20 @@ async function saveProfile() {
 }
 
 function renderProfile() {
+  if (!profileText) {
+    return;
+  }
+
   profileText.value = loadProfile();
   setProfileEditing(false);
   setProfileStatus("saved");
 }
 
 function setProfileStatus(state) {
+  if (!profileStatus) {
+    return;
+  }
+
   if (state === "saved") {
     profileStatus.textContent = "저장됨";
     profileStatus.className = "save-state is-saved";
@@ -613,7 +631,7 @@ function setProfileStatus(state) {
 
 function toggleProfileEditor() {
   setProfileEditing(!isProfileEditing);
-  if (isProfileEditing) {
+  if (isProfileEditing && profileText) {
     profileText.focus();
     profileText.setSelectionRange(
       profileText.value.length,
@@ -624,9 +642,15 @@ function toggleProfileEditor() {
 
 function setProfileEditing(nextEditing) {
   isProfileEditing = nextEditing;
-  profilePanel.classList.toggle("is-editing", nextEditing);
-  profileText.readOnly = !nextEditing;
-  toggleProfileEditorButton.textContent = nextEditing ? "접기" : "수정하기";
+  if (profilePanel) {
+    profilePanel.classList.toggle("is-editing", nextEditing);
+  }
+  if (profileText) {
+    profileText.readOnly = !nextEditing;
+  }
+  if (toggleProfileEditorButton) {
+    toggleProfileEditorButton.textContent = nextEditing ? "접기" : "수정하기";
+  }
 }
 
 function applySavedTheme() {

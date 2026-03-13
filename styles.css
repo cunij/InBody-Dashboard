@@ -251,6 +251,10 @@ html[data-theme="dark"] button::before {
   margin: 0 0 20px;
 }
 
+.page-status:empty {
+  display: none;
+}
+
 .panel-head h2 {
   margin: 0 0 6px;
   font-size: 1.36rem;
