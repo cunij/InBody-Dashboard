@@ -12,15 +12,14 @@ const publicFiles = new Map([
   ["/styles.css", "styles.css"],
   ["/app.js", "app.js"],
 ]);
-const ALLOWED_MODELS = ["gpt-5", "gpt-5-mini", "gpt-5-nano", "gpt-4.1", "gpt-4o"];
-const DEFAULT_MODEL = "gpt-5";
+const DEFAULT_MODEL = "gpt-5-mini";
 const MAIN_SPLITS = ["PUSH", "PULL", "LEG"];
 
 loadEnv(path.join(rootDir, ".env"));
 
 const port = Number(process.env.PORT || 3000);
 const host = process.env.HOST || "0.0.0.0";
-const defaultModel = normalizeModel(process.env.OPENAI_MODEL);
+const defaultModel = DEFAULT_MODEL;
 const database = createDatabasePool(process.env.DATABASE_URL);
 let databaseInitError = null;
 const databaseReadyPromise = database
@@ -40,10 +39,6 @@ const server = http.createServer(async (request, response) => {
         hasDatabase: Boolean(database),
         defaultModel,
       });
-    }
-
-    if (request.method === "GET" && url.pathname === "/api/models") {
-      return handleModels(response);
     }
 
     if (request.method === "GET" && url.pathname === "/api/data") {
@@ -76,6 +71,18 @@ const server = http.createServer(async (request, response) => {
 
     if (request.method === "DELETE" && url.pathname.startsWith("/api/workouts/")) {
       return handleDeleteWorkout(response, decodeURIComponent(url.pathname.slice("/api/workouts/".length)));
+    }
+
+    if (request.method === "PUT" && url.pathname.startsWith("/api/routines/")) {
+      return handleSaveRoutine(
+        request,
+        response,
+        decodeURIComponent(url.pathname.slice("/api/routines/".length))
+      );
+    }
+
+    if (request.method === "DELETE" && url.pathname.startsWith("/api/routines/")) {
+      return handleDeleteRoutine(response, decodeURIComponent(url.pathname.slice("/api/routines/".length)));
     }
 
     if (request.method === "GET" && url.pathname === "/health") {
@@ -111,7 +118,7 @@ async function handleData(response) {
     return;
   }
 
-  const [recordsResult, workoutsResult, profileResult] = await Promise.all([
+  const [recordsResult, workoutsResult, profileResult, routinesResult] = await Promise.all([
     db.query(
       `SELECT id, record_date, weight, body_fat, muscle, extract(epoch FROM created_at) * 1000 AS created_at
        FROM inbody_records
@@ -128,6 +135,11 @@ async function handleData(response) {
        WHERE key = 'default'
        LIMIT 1`
     ),
+    db.query(
+      `SELECT routine_date, split, failure_set_ratio, items
+       FROM daily_routines
+       ORDER BY routine_date ASC`
+    ),
   ]);
 
   const records = recordsResult.rows.map(formatRecordRow);
@@ -138,9 +150,14 @@ async function handleData(response) {
     };
     return accumulator;
   }, {});
+  const dailyRoutines = routinesResult.rows.reduce((accumulator, row) => {
+    const routine = formatDailyRoutineRow(row);
+    accumulator[routine.date] = routine;
+    return accumulator;
+  }, {});
   const profile = profileResult.rows[0]?.content || "";
 
-  return sendJson(response, 200, { records, workouts, profile });
+  return sendJson(response, 200, { records, workouts, dailyRoutines, profile });
 }
 
 async function handleUpsertRecord(request, response) {
@@ -268,14 +285,69 @@ async function handleDeleteWorkout(response, dateString) {
   return sendJson(response, 200, { ok: true });
 }
 
+async function handleSaveRoutine(request, response, dateString) {
+  const db = await requireDatabase(response);
+  if (!db) {
+    return;
+  }
+
+  if (!isDateString(dateString)) {
+    return sendJson(response, 400, { error: "Invalid routine date" });
+  }
+
+  const body = await readJsonBody(request);
+  const routine = sanitizeDailyRoutineInput({ ...body, date: dateString });
+  if (!routine) {
+    return sendJson(response, 400, { error: "Invalid routine payload" });
+  }
+
+  const result = await db.query(
+    `INSERT INTO daily_routines (routine_date, split, failure_set_ratio, items)
+     VALUES ($1, $2, $3, $4::jsonb)
+     ON CONFLICT (routine_date)
+     DO UPDATE SET
+       split = EXCLUDED.split,
+       failure_set_ratio = EXCLUDED.failure_set_ratio,
+       items = EXCLUDED.items,
+       updated_at = now()
+     RETURNING routine_date, split, failure_set_ratio, items`,
+    [
+      routine.date,
+      routine.split,
+      routine.failureSetRatio,
+      JSON.stringify(routine.items),
+    ]
+  );
+
+  return sendJson(response, 200, {
+    routine: formatDailyRoutineRow(result.rows[0]),
+  });
+}
+
+async function handleDeleteRoutine(response, dateString) {
+  const db = await requireDatabase(response);
+  if (!db) {
+    return;
+  }
+
+  if (!isDateString(dateString)) {
+    return sendJson(response, 400, { error: "Invalid routine date" });
+  }
+
+  await db.query("DELETE FROM daily_routines WHERE routine_date = $1", [dateString]);
+  return sendJson(response, 200, { ok: true });
+}
+
 async function handleAnalyze(request, response) {
   const body = await readJsonBody(request);
   const latest = sanitizeLatestRecord(body.latest);
   const trend = typeof body.trend === "string" ? body.trend.trim() : "";
   const records = Array.isArray(body.records) ? body.records.map(sanitizeLatestRecord).filter(Boolean) : [];
   const workouts = Array.isArray(body.workouts) ? body.workouts.map(sanitizeAnalysisWorkout).filter(Boolean) : [];
-  const model = normalizeModel(body.model);
   const profile = typeof body.profile === "string" ? body.profile.trim() : "";
+  const routineDate = isDateString(body.routineDate) ? body.routineDate : "";
+  const routine = sanitizeAnalysisRoutine(body.routine);
+  const failureSetRatio = sanitizeFailureSetRatio(body.failureSetRatio);
 
   if (!latest || !trend) {
     return sendJson(response, 400, { error: "latest and trend are required" });
@@ -285,8 +357,16 @@ async function handleAnalyze(request, response) {
     return sendJson(response, 503, { error: "OPENAI_API_KEY is missing in .env" });
   }
 
-  const prompt = buildPrompt(latest, trend, records, profile, workouts);
-  const fallbackRoutine = buildRoutineFallback(latest, workouts);
+  const prompt = buildPrompt(
+    latest,
+    trend,
+    records,
+    profile,
+    workouts,
+    routineDate,
+    routine,
+    failureSetRatio
+  );
 
   try {
     const apiResponse = await fetch("https://api.openai.com/v1/responses", {
@@ -296,7 +376,7 @@ async function handleAnalyze(request, response) {
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model,
+        model: DEFAULT_MODEL,
         input: prompt,
       }),
     });
@@ -321,17 +401,8 @@ async function handleAnalyze(request, response) {
       });
     }
 
-    const parsed = extractStructuredResponse(rawText);
-    if (parsed) {
-      return sendJson(response, 200, {
-        analysis: parsed.analysis,
-        routine: parsed.routine || fallbackRoutine,
-      });
-    }
-
     return sendJson(response, 200, {
       analysis: rawText,
-      routine: fallbackRoutine,
     });
   } catch (error) {
     console.error("OpenAI network error:", error);
@@ -341,41 +412,16 @@ async function handleAnalyze(request, response) {
   }
 }
 
-async function handleModels(response) {
-  if (!process.env.OPENAI_API_KEY) {
-    return sendJson(response, 200, { models: [] });
-  }
-
-  try {
-    const apiResponse = await fetch("https://api.openai.com/v1/models", {
-      headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-      },
-    });
-
-    const payload = await apiResponse.json().catch(() => ({}));
-    if (!apiResponse.ok) {
-      const message =
-        payload.error?.message || `OpenAI model list request failed with status ${apiResponse.status}`;
-      console.error("OpenAI models error:", payload);
-      return sendJson(response, apiResponse.status, { error: message, details: payload });
-    }
-
-    const availableModelIds = new Set(
-      Array.isArray(payload.data) ? payload.data.map((entry) => entry.id).filter(Boolean) : []
-    );
-    const models = ALLOWED_MODELS.filter((modelName) => availableModelIds.has(modelName));
-
-    return sendJson(response, 200, { models });
-  } catch (error) {
-    console.error("OpenAI models network error:", error);
-    return sendJson(response, 502, {
-      error: `OpenAI models network error: ${error.message}`,
-    });
-  }
-}
-
-function buildPrompt(latest, trend, records, profile, workouts) {
+function buildPrompt(
+  latest,
+  trend,
+  records,
+  profile,
+  workouts,
+  routineDate,
+  routine,
+  failureSetRatio
+) {
   const recordLines = records.length
     ? records
         .map(
@@ -388,20 +434,31 @@ function buildPrompt(latest, trend, records, profile, workouts) {
   const workoutLines = workouts.length
     ? workouts.map((workout) => `- ${workout.date}: ${formatWorkoutLabel(workout)}`).join("\n")
     : "";
+  const routineLines = routine
+    ? routine.items
+        .map(
+          (item) =>
+            `- ${item.name}: 세트 ${item.sets}, 횟수 ${item.reps}${item.weight ? `, 중량 ${item.weight}` : ""}${
+              item.note ? `, 메모 ${item.note}` : ""
+            }`
+        )
+        .join("\n")
+    : "- 저장된 루틴 없음";
+  const routineSummary = routine
+    ? `루틴 날짜 ${routineDate}, 분할 ${routine.split}, 실패지점 수행 세트 비율 ${
+        failureSetRatio === null ? "미지정" : `${failureSetRatio}%`
+      }`
+    : `루틴 날짜 ${routineDate || latest.date}, 저장된 루틴 없음`;
 
   const sections = [
     "You evaluate InBody trends for a bodybuilding-focused dashboard.",
     "Respond in Korean.",
-    'The analysis field must be a single string with exactly these three numbered sections: "1) 현재 상태", "2) 추세 해석", "3) 다음 행동 제안".',
+    'Return plain text with exactly these three numbered sections: "1) 현재 상태", "2) 루틴 평가", "3) 다음 행동 제안".',
     "When profile information includes diet, calorie surplus, protein intake, meal frequency, or supplements, reflect them directly in the analysis.",
-    "The next-action section must include at least one concrete note about diet or supplements when that information is available.",
-    "Create one practical workout routine for today in the routine field.",
-    "Prefer avoiding the same main split as the most recent one or two main split workouts.",
-    "If recent workout frequency is very high, you may set recommendedSplit to RECOVERY.",
-    "CARDIO is supplementary only and must not replace the main split unless recommendedSplit is RECOVERY.",
-    "Return JSON only. Do not use markdown or code fences.",
-    'JSON schema: {"analysis":"string","routine":{"recommendedSplit":"PUSH|PULL|LEG|RECOVERY","reason":"string","exercises":[{"name":"string","sets":"string","reps":"string","note":"string optional"}],"cardioNote":"string optional"}}',
-    "Provide 4 to 6 exercises in routine.exercises.",
+    "In section 2, evaluate the saved workout routine for exercise selection, volume, repetition targets, and the failure-set ratio.",
+    "If no saved routine exists for the latest record date, explicitly say that the routine is missing and explain what information should be added.",
+    "The next-action section must include at least one concrete note about training execution or nutrition when that information is available.",
+    "Do not use markdown, bullet lists, or JSON.",
     `최신 기록: 날짜 ${latest.date}, 체중 ${latest.weight}kg, 체지방률 ${latest.bodyFat}%, 골격근량 ${latest.muscle}kg`,
     `직전 변화 요약: ${trend}`,
   ];
@@ -416,6 +473,10 @@ function buildPrompt(latest, trend, records, profile, workouts) {
     sections.push("최근 운동 기록:");
     sections.push(workoutLines);
   }
+
+  sections.push(`저장된 루틴 요약: ${routineSummary}`);
+  sections.push("저장된 루틴 상세:");
+  sections.push(routineLines);
 
   sections.push("최근 기록 목록:");
   sections.push(recordLines);
@@ -687,6 +748,24 @@ async function initializeDatabase(db) {
       updated_at timestamptz NOT NULL DEFAULT now()
     );
   `);
+
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS daily_routines (
+      routine_date date PRIMARY KEY,
+      split text NOT NULL,
+      failure_set_ratio integer NOT NULL,
+      items jsonb NOT NULL DEFAULT '[]'::jsonb,
+      updated_at timestamptz NOT NULL DEFAULT now(),
+      CONSTRAINT daily_routines_split_check
+        CHECK (split IN ('PULL', 'PUSH', 'LEG')),
+      CONSTRAINT daily_routines_failure_ratio_check
+        CHECK (
+          failure_set_ratio >= 0
+          AND failure_set_ratio <= 100
+          AND failure_set_ratio % 5 = 0
+        )
+    );
+  `);
 }
 
 async function requireDatabase(response) {
@@ -768,6 +847,78 @@ function sanitizeWorkoutInput(input) {
   };
 }
 
+function sanitizeDailyRoutineInput(input) {
+  if (!input || typeof input !== "object" || !isDateString(input.date)) {
+    return null;
+  }
+
+  const split =
+    typeof input.split === "string" && MAIN_SPLITS.includes(input.split.toUpperCase())
+      ? input.split.toUpperCase()
+      : "";
+  const failureSetRatio = sanitizeFailureSetRatio(input.failureSetRatio);
+  const items = sanitizeRoutineItems(input.items);
+
+  if (!split || failureSetRatio === null || items.length === 0) {
+    return null;
+  }
+
+  return {
+    date: input.date,
+    split,
+    failureSetRatio,
+    items,
+  };
+}
+
+function sanitizeAnalysisRoutine(input) {
+  if (!input || typeof input !== "object") {
+    return null;
+  }
+
+  const split =
+    typeof input.split === "string" && MAIN_SPLITS.includes(input.split.toUpperCase())
+      ? input.split.toUpperCase()
+      : "";
+  const items = sanitizeRoutineItems(input.items);
+
+  if (!split || items.length === 0) {
+    return null;
+  }
+
+  return {
+    split,
+    items,
+  };
+}
+
+function sanitizeRoutineItems(input) {
+  if (!Array.isArray(input)) {
+    return [];
+  }
+
+  return input
+    .filter((item) => item && typeof item === "object")
+    .map((item) => ({
+      id: typeof item.id === "string" && item.id.trim() ? item.id.trim() : crypto.randomUUID(),
+      name: String(item.name || "").trim(),
+      sets: String(item.sets || "").trim(),
+      reps: String(item.reps || "").trim(),
+      weight: String(item.weight || "").trim(),
+      note: String(item.note || "").trim(),
+    }))
+    .filter((item) => item.name && item.sets && item.reps);
+}
+
+function sanitizeFailureSetRatio(value) {
+  const numeric = Number(value);
+  if (!Number.isInteger(numeric) || numeric < 0 || numeric > 100 || numeric % 5 !== 0) {
+    return null;
+  }
+
+  return numeric;
+}
+
 function sanitizeAnalysisWorkout(input) {
   if (!input || typeof input !== "object" || !isDateString(input.date)) {
     return null;
@@ -804,12 +955,17 @@ function formatWorkoutRow(row) {
   };
 }
 
-function isDateString(dateString) {
-  return typeof dateString === "string" && /^\d{4}-\d{2}-\d{2}$/u.test(dateString);
+function formatDailyRoutineRow(row) {
+  return {
+    date: row.routine_date,
+    split: row.split,
+    failureSetRatio: Number(row.failure_set_ratio),
+    items: sanitizeRoutineItems(row.items),
+  };
 }
 
-function normalizeModel(candidate) {
-  return ALLOWED_MODELS.includes(candidate) ? candidate : DEFAULT_MODEL;
+function isDateString(dateString) {
+  return typeof dateString === "string" && /^\d{4}-\d{2}-\d{2}$/u.test(dateString);
 }
 
 function contentType(fileName) {

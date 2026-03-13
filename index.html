@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
@@ -17,89 +17,111 @@
       <div class="hero-stack" id="hero-stack">
         <header class="topbar hero-title">
           <h1>InBody Dashboard</h1>
-        <button type="button" id="theme-toggle" class="theme-toggle">다크 모드</button>
+          <button type="button" id="theme-toggle" class="theme-toggle">
+            다크 모드
+          </button>
         </header>
 
         <section class="panel calendar-panel hero-calendar">
-        <div class="panel-head panel-head-inline">
-          <div>
-            <h2>운동 캘린더</h2>
-          </div>
-          <div id="workout-summary" class="calendar-summary">최근 7일 0일 운동</div>
-        </div>
-
-        <div class="calendar-layout">
-          <div class="calendar-board">
-            <div class="calendar-toolbar">
-              <button type="button" id="calendar-prev" class="ghost calendar-nav">이전 달</button>
-              <strong id="calendar-month">2026년 3월</strong>
-              <button type="button" id="calendar-next" class="ghost calendar-nav">다음 달</button>
+          <div class="panel-head panel-head-inline">
+            <div>
+              <h2>운동 캘린더</h2>
             </div>
-
-            <div class="calendar-weekdays" aria-hidden="true">
-              <span>일</span>
-              <span>월</span>
-              <span>화</span>
-              <span>수</span>
-              <span>목</span>
-              <span>금</span>
-              <span>토</span>
+            <div id="workout-summary" class="calendar-summary">
+              최근 7일 0일 운동
             </div>
-
-            <div id="calendar-grid" class="calendar-grid"></div>
           </div>
 
-          <aside class="calendar-editor">
-            <p class="section-label">선택 날짜</p>
-            <strong id="selected-workout-date" class="calendar-date-label">-</strong>
+          <div class="calendar-layout">
+            <div class="calendar-board">
+              <div class="calendar-toolbar">
+                <button
+                  type="button"
+                  id="calendar-prev"
+                  class="ghost calendar-nav"
+                >
+                  이전
+                </button>
+                <strong id="calendar-month">2026년 3월</strong>
+                <button
+                  type="button"
+                  id="calendar-next"
+                  class="ghost calendar-nav"
+                >
+                  다음
+                </button>
+              </div>
 
-            <div class="workout-button-grid">
-              <button
-                type="button"
-                id="workout-push"
-                class="workout-split-button"
-                data-workout-type="PUSH"
-                aria-pressed="false"
-              >
-                PUSH
-              </button>
-              <button
-                type="button"
-                id="workout-pull"
-                class="workout-split-button"
-                data-workout-type="PULL"
-                aria-pressed="false"
-              >
-                PULL
-              </button>
-              <button
-                type="button"
-                id="workout-leg"
-                class="workout-split-button"
-                data-workout-type="LEG"
-                aria-pressed="false"
-              >
-                LEG
-              </button>
-              <button
-                type="button"
-                id="workout-cardio"
-                class="workout-split-button"
-                data-workout-type="CARDIO"
-                aria-pressed="false"
-              >
-                CARDIO
-              </button>
+              <div class="calendar-weekdays" aria-hidden="true">
+                <span>일</span>
+                <span>월</span>
+                <span>화</span>
+                <span>수</span>
+                <span>목</span>
+                <span>금</span>
+                <span>토</span>
+              </div>
+
+              <div id="calendar-grid" class="calendar-grid"></div>
             </div>
 
-            <div class="form-actions">
-              <button type="button" id="save-workout" class="primary">운동 저장</button>
-              <button type="button" id="delete-workout" class="ghost">기록 삭제</button>
-            </div>
+            <aside class="calendar-editor">
+              <p class="section-label">선택 날짜</p>
+              <strong id="selected-workout-date" class="calendar-date-label"
+                >-</strong
+              >
 
-            <p id="workout-editor-status" class="calendar-editor-status"></p>
-          </aside>
-        </div>
+              <div class="workout-button-grid">
+                <button
+                  type="button"
+                  id="workout-push"
+                  class="workout-split-button"
+                  data-workout-type="PUSH"
+                  aria-pressed="false"
+                >
+                  PUSH
+                </button>
+                <button
+                  type="button"
+                  id="workout-pull"
+                  class="workout-split-button"
+                  data-workout-type="PULL"
+                  aria-pressed="false"
+                >
+                  PULL
+                </button>
+                <button
+                  type="button"
+                  id="workout-leg"
+                  class="workout-split-button"
+                  data-workout-type="LEG"
+                  aria-pressed="false"
+                >
+                  LEG
+                </button>
+                <button
+                  type="button"
+                  id="workout-cardio"
+                  class="workout-split-button"
+                  data-workout-type="CARDIO"
+                  aria-pressed="false"
+                >
+                  CARDIO
+                </button>
+              </div>
+
+              <div class="form-actions">
+                <button type="button" id="save-workout" class="primary">
+                  운동 저장
+                </button>
+                <button type="button" id="delete-workout" class="ghost">
+                  기록 삭제
+                </button>
+              </div>
+
+              <p id="workout-editor-status" class="calendar-editor-status"></p>
+            </aside>
+          </div>
         </section>
       </div>
 
@@ -129,10 +151,20 @@
                   placeholder="YYYY-MM-DD"
                   required
                 />
-                <button type="button" id="date-picker-button" class="ghost date-picker-button">
+                <button
+                  type="button"
+                  id="date-picker-button"
+                  class="ghost date-picker-button"
+                >
                   달력
                 </button>
-                <input type="date" id="date-picker-proxy" class="date-picker-proxy" tabindex="-1" aria-hidden="true" />
+                <input
+                  type="date"
+                  id="date-picker-proxy"
+                  class="date-picker-proxy"
+                  tabindex="-1"
+                  aria-hidden="true"
+                />
               </div>
             </label>
             <label>
@@ -174,40 +206,122 @@
             </label>
             <div class="form-actions">
               <button type="submit" class="primary">저장</button>
-              <button type="button" id="reset-storage" class="ghost">전체 삭제</button>
+              <button type="button" id="reset-storage" class="ghost">
+                전체 삭제
+              </button>
             </div>
           </form>
         </section>
 
-        <section class="panel ai-panel">
+        <section class="panel routine-panel">
           <div class="panel-head panel-head-inline">
-            <h2>AI 평가</h2>
-            <p id="server-status" class="status-line">서버 설정을 확인하고 있습니다...</p>
+            <div>
+              <h2>루틴 입력</h2>
+            </div>
+            <strong id="routine-date-label" class="routine-date-label"
+              >-</strong
+            >
           </div>
 
-          <div class="ai-config stacked-form">
-            <label>
-              모델
-              <select id="model" name="model"></select>
+          <div class="routine-builder">
+            <div
+              class="routine-split-toggle"
+              role="tablist"
+              aria-label="루틴 분할 선택"
+            >
+              <button
+                type="button"
+                class="routine-split-button"
+                data-routine-split="PULL"
+                aria-pressed="false"
+              >
+                PULL
+              </button>
+              <button
+                type="button"
+                class="routine-split-button"
+                data-routine-split="PUSH"
+                aria-pressed="false"
+              >
+                PUSH
+              </button>
+              <button
+                type="button"
+                class="routine-split-button"
+                data-routine-split="LEG"
+                aria-pressed="false"
+              >
+                LEG
+              </button>
+            </div>
+
+            <label class="routine-slider-field">
+              <span class="routine-slider-label">
+                실패지점 수행 세트 비율
+                <strong id="failure-set-ratio-value">70%</strong>
+              </span>
+              <input
+                type="range"
+                id="failure-set-ratio"
+                min="0"
+                max="100"
+                step="5"
+                value="70"
+              />
             </label>
+
+            <label class="routine-search-field">
+              <span>운동 검색</span>
+              <input
+                type="search"
+                id="routine-search"
+                placeholder="운동 종목 검색"
+                autocomplete="off"
+              />
+            </label>
+
+            <div
+              id="routine-search-results"
+              class="routine-search-results"
+            ></div>
+
+            <div id="routine-items" class="routine-items"></div>
           </div>
 
           <div class="form-actions">
-            <button type="button" id="save-model-settings" class="secondary">모델 저장</button>
-            <button type="button" id="run-analysis" class="primary">평가 생성</button>
+            <button type="button" id="save-routine" class="primary">
+              루틴 저장
+            </button>
+            <button type="button" id="delete-routine" class="ghost">
+              루틴 삭제
+            </button>
+          </div>
+
+          <p id="routine-editor-status" class="status-line"></p>
+        </section>
+
+        <section class="panel ai-panel">
+          <div class="panel-head">
+            <div class="analysis-heading">
+              <h2>AI 평가</h2>
+              <span id="analysis-model" class="analysis-model-label">GPT-5 mini</span>
+            </div>
+            <p id="server-status" class="status-line">
+              서버 설정을 확인하고 있습니다...
+            </p>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" id="run-analysis" class="primary">
+              평가 생성
+            </button>
           </div>
 
           <div class="analysis-box">
             <p class="section-label">평가 결과</p>
             <div id="analysis-output" class="analysis-output">
-              최근 기록을 남기면 여기에 AI 평가 또는 로컬 분석 결과가 표시됩니다.
-            </div>
-          </div>
-
-          <div class="routine-box">
-            <p class="section-label">추천 루틴</p>
-            <div id="routine-output" class="routine-output">
-              평가를 생성하면 오늘 추천 운동 루틴이 여기에 표시됩니다.
+              최근 기록을 남기면 여기에 AI 평가 또는 로컬 분석 결과가
+              표시됩니다.
             </div>
           </div>
         </section>
@@ -249,7 +363,11 @@
             </div>
             <div class="chart-stage" data-stage="bodyFat">
               <canvas id="bodyfat-chart" width="480" height="240"></canvas>
-              <div class="chart-tooltip" data-tooltip-for="bodyFat" hidden></div>
+              <div
+                class="chart-tooltip"
+                data-tooltip-for="bodyFat"
+                hidden
+              ></div>
             </div>
           </article>
 
@@ -324,8 +442,16 @@
               <li>보충제와 생활 우선순위</li>
             </ul>
             <div class="profile-actions">
-              <button type="button" id="toggle-profile-editor" class="secondary">수정하기</button>
-              <button type="button" id="save-profile" class="primary">프로필 저장</button>
+              <button
+                type="button"
+                id="toggle-profile-editor"
+                class="secondary"
+              >
+                수정하기
+              </button>
+              <button type="button" id="save-profile" class="primary">
+                프로필 저장
+              </button>
             </div>
           </aside>
         </div>
@@ -334,14 +460,29 @@
 
     <div id="chart-modal" class="chart-modal" hidden aria-hidden="true">
       <div id="chart-modal-backdrop" class="chart-modal-backdrop"></div>
-      <section class="chart-modal-panel" role="dialog" aria-modal="true" aria-labelledby="chart-modal-title">
+      <section
+        class="chart-modal-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="chart-modal-title"
+      >
         <div class="chart-modal-head">
           <h3 id="chart-modal-title">그래프 확대</h3>
-          <button type="button" id="close-chart-modal" class="ghost chart-modal-close">닫기</button>
+          <button
+            type="button"
+            id="close-chart-modal"
+            class="ghost chart-modal-close"
+          >
+            닫기
+          </button>
         </div>
         <div class="chart-stage chart-stage-modal">
           <canvas id="chart-modal-canvas" width="960" height="560"></canvas>
-          <div id="chart-modal-tooltip" class="chart-tooltip chart-tooltip-modal" hidden></div>
+          <div
+            id="chart-modal-tooltip"
+            class="chart-tooltip chart-tooltip-modal"
+            hidden
+          ></div>
         </div>
       </section>
     </div>

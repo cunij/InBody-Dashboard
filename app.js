@@ -3,17 +3,52 @@ const LEGACY_RECORDS_KEY = "inbody-tracker-records";
 const LEGACY_WORKOUTS_KEY = "inbody-workouts";
 const LEGACY_PROFILE_KEY = "inbody-profile";
 const LEGACY_MIGRATION_FLAG = "inbody-legacy-migrated";
-const ALLOWED_MODELS = [
-  "gpt-5",
-  "gpt-5-mini",
-  "gpt-5-nano",
-  "gpt-4.1",
-  "gpt-4o",
-];
-const DEFAULT_MODEL = "gpt-5";
+const DEFAULT_MODEL = "gpt-5-mini";
+const DEFAULT_FAILURE_SET_RATIO = 70;
 const MAIN_WORKOUT_SPLITS = ["PULL", "PUSH", "LEG"];
 const WORKOUT_TYPES = ["PULL", "PUSH", "LEG", "CARDIO"];
 const WORKOUT_LOOKBACK_DAYS = 14;
+const EXERCISE_LIBRARY_BY_SPLIT = {
+  PULL: [
+    "랫풀다운",
+    "랫풀다운 (패러렐)",
+    "풀업",
+    "친업",
+    "바벨 로우",
+    "시티드 케이블 로우",
+    "체스트 서포티드 로우",
+    "원암 덤벨 로우",
+    "페이스풀",
+    "바벨 컬",
+    "덤벨 컬",
+    "시티드 컬",
+  ],
+  PUSH: [
+    "벤치프레스",
+    "인클라인 벤치프레스",
+    "덤벨 프레스",
+    "인클라인 덤벨 프레스",
+    "체스트프레스",
+    "바벨 숄더프레스",
+    "덤벨 숄더프레스",
+    "레터럴 레이즈",
+    "케이블 플라이",
+    "딥스",
+    "트라이셉스 푸시다운",
+    "오버헤드 익스텐션",
+  ],
+  LEG: [
+    "백 스쿼트",
+    "레그프레스",
+    "핵스쿼트",
+    "루마니안 데드리프트",
+    "불가리안 스플릿 스쿼트",
+    "런지",
+    "레그 익스텐션",
+    "레그 컬",
+    "카프 레이즈",
+  ],
+};
 const DEFAULT_PROFILE = `## 1. Basic Profile
 
 - Height: 180 cm
@@ -74,11 +109,22 @@ const datePickerProxy = document.getElementById("date-picker-proxy");
 const historyBody = document.getElementById("history-body");
 const latestSummary = document.getElementById("latest-summary");
 const analysisOutput = document.getElementById("analysis-output");
-const routineOutput = document.getElementById("routine-output");
-const modelSelect = document.getElementById("model");
 const serverStatus = document.getElementById("server-status");
+const analysisModelBadge = document.getElementById("analysis-model");
 const themeToggle = document.getElementById("theme-toggle");
 const heroStack = document.getElementById("hero-stack");
+const routineDateLabel = document.getElementById("routine-date-label");
+const routineSearchInput = document.getElementById("routine-search");
+const routineSearchResults = document.getElementById("routine-search-results");
+const routineItems = document.getElementById("routine-items");
+const routineEditorStatus = document.getElementById("routine-editor-status");
+const saveRoutineButton = document.getElementById("save-routine");
+const deleteRoutineButton = document.getElementById("delete-routine");
+const failureSetRatioInput = document.getElementById("failure-set-ratio");
+const failureSetRatioValue = document.getElementById("failure-set-ratio-value");
+const routineSplitButtons = Array.from(
+  document.querySelectorAll("[data-routine-split]"),
+);
 const profileText = document.getElementById("profile-text");
 const profileStatus = document.getElementById("profile-status");
 const profilePanel = document.querySelector(".profile-panel");
@@ -172,14 +218,16 @@ const ROUTINE_TEMPLATES = {
 
 let records = [];
 let workouts = {};
+let dailyRoutines = {};
 let profileContent = DEFAULT_PROFILE;
 let serverConfig = {
   hasApiKey: false,
-  defaultModel: DEFAULT_MODEL,
 };
 let isProfileEditing = false;
 let selectedWorkoutDate = getTodayLocalDate();
 let currentCalendarDate = getMonthAnchor(selectedWorkoutDate);
+let routineDraftDate = "";
+let routineDraft = createRoutineDraft({ date: selectedWorkoutDate });
 let chartStates = {
   weight: createEmptyChartState("weight"),
   bodyFat: createEmptyChartState("bodyFat"),
@@ -195,15 +243,16 @@ bootstrap();
 async function bootstrap() {
   setDateInputValue();
   applySavedTheme();
+  if (analysisModelBadge) {
+    analysisModelBadge.textContent = "GPT-5 mini";
+  }
   renderServerStatus("loading");
-  renderModelOptions(ALLOWED_MODELS, normalizeModel(loadSettings().model));
   renderProfile();
   renderAll();
   bindEvents();
   syncHeroScrollScene();
   await loadServerConfig();
   await loadPersistedData();
-  await loadModelOptions();
 }
 
 function bindEvents() {
@@ -220,12 +269,33 @@ function bindEvents() {
     .getElementById("reset-storage")
     .addEventListener("click", resetStorage);
   document
-    .getElementById("save-model-settings")
-    .addEventListener("click", saveSettings);
-  document
     .getElementById("run-analysis")
     .addEventListener("click", generateAnalysis);
   themeToggle.addEventListener("click", toggleTheme);
+  routineSplitButtons.forEach((button) => {
+    button.addEventListener("click", () =>
+      setRoutineDraftSplit(button.dataset.routineSplit),
+    );
+  });
+  if (routineSearchInput) {
+    routineSearchInput.addEventListener("input", renderRoutineSearchResults);
+  }
+  if (routineSearchResults) {
+    routineSearchResults.addEventListener("click", handleRoutineSearchClick);
+  }
+  if (routineItems) {
+    routineItems.addEventListener("input", handleRoutineItemInput);
+    routineItems.addEventListener("click", handleRoutineItemClick);
+  }
+  if (failureSetRatioInput) {
+    failureSetRatioInput.addEventListener("input", handleFailureSetRatioInput);
+  }
+  if (saveRoutineButton) {
+    saveRoutineButton.addEventListener("click", saveDailyRoutine);
+  }
+  if (deleteRoutineButton) {
+    deleteRoutineButton.addEventListener("click", deleteDailyRoutine);
+  }
   toggleProfileEditorButton.addEventListener("click", toggleProfileEditor);
   saveProfileButton.addEventListener("click", saveProfile);
   profileText.addEventListener("input", () => setProfileStatus("edited"));
@@ -296,10 +366,13 @@ async function loadPersistedData() {
         : "";
     records = sanitizeRecords(payload.records);
     workouts = sanitizeWorkouts(payload.workouts);
+    dailyRoutines = sanitizeDailyRoutines(payload.dailyRoutines);
     profileContent = remoteProfile || DEFAULT_PROFILE;
+    routineDraftDate = "";
     if (
       records.length === 0 &&
       Object.keys(workouts).length === 0 &&
+      Object.keys(dailyRoutines).length === 0 &&
       !remoteProfile &&
       shouldRunLegacyMigration()
     ) {
@@ -313,7 +386,9 @@ async function loadPersistedData() {
   } catch (error) {
     records = [];
     workouts = {};
+    dailyRoutines = {};
     profileContent = DEFAULT_PROFILE;
+    routineDraftDate = "";
     renderProfile();
     renderAll();
     analysisOutput.textContent = `저장된 데이터를 불러오지 못했습니다: ${error.message}`;
@@ -470,6 +545,34 @@ function sanitizeWorkouts(raw) {
   return normalized;
 }
 
+function sanitizeDailyRoutines(raw) {
+  if (!raw || typeof raw !== "object") {
+    return {};
+  }
+
+  const normalized = {};
+  Object.entries(raw).forEach(([date, entry]) => {
+    const normalizedDate = normalizeDateValue(date);
+    if (!normalizedDate || !entry || typeof entry !== "object") {
+      return;
+    }
+
+    const routine = sanitizeRoutineValue({
+      date: normalizedDate,
+      split: entry.split,
+      failureSetRatio: entry.failureSetRatio,
+      items: entry.items,
+    });
+    if (!routine) {
+      return;
+    }
+
+    normalized[normalizedDate] = routine;
+  });
+
+  return normalized;
+}
+
 function loadProfile() {
   return profileContent || DEFAULT_PROFILE;
 }
@@ -548,13 +651,8 @@ function toggleTheme() {
     document.documentElement.dataset.theme === "dark" ? "dark" : "light";
   const nextTheme = currentTheme === "dark" ? "light" : "dark";
   applyTheme(nextTheme);
-  saveSettingsData({ theme: nextTheme, model: getSelectedModel() });
+  saveSettingsData({ theme: nextTheme });
   renderCharts();
-}
-
-function saveSettings() {
-  saveSettingsData({ model: getSelectedModel() });
-  analysisOutput.textContent = "모델 설정을 저장했습니다.";
 }
 
 function renderServerStatus(status, message = "") {
@@ -580,8 +678,6 @@ async function loadServerConfig() {
     }
 
     serverConfig = await response.json();
-    serverConfig.defaultModel = normalizeModel(serverConfig.defaultModel);
-    renderModelOptions(ALLOWED_MODELS, normalizeModel(loadSettings().model));
 
     if (serverConfig.hasApiKey) {
       renderServerStatus("connected");
@@ -598,68 +694,6 @@ async function loadServerConfig() {
     );
     console.error(error);
   }
-}
-
-async function loadModelOptions() {
-  if (!serverConfig.hasApiKey) {
-    renderModelOptions(ALLOWED_MODELS, normalizeModel(loadSettings().model));
-    return;
-  }
-
-  try {
-    const response = await fetch("/api/models");
-    if (!response.ok) {
-      throw new Error(`Models request failed: ${response.status}`);
-    }
-
-    const payload = await response.json();
-    const models =
-      Array.isArray(payload.models) && payload.models.length
-        ? payload.models
-        : ALLOWED_MODELS;
-    renderModelOptions(models, normalizeModel(loadSettings().model, models));
-    renderServerStatus("connected");
-  } catch (error) {
-    renderModelOptions(ALLOWED_MODELS, normalizeModel(loadSettings().model));
-    renderServerStatus("connected");
-    console.error(error);
-  }
-}
-
-function renderModelOptions(models, selectedModel) {
-  const options = uniqueModels(models).filter((model) =>
-    ALLOWED_MODELS.includes(model),
-  );
-  const finalOptions = options.length ? options : ALLOWED_MODELS;
-
-  modelSelect.innerHTML = finalOptions
-    .map((model) => `<option value="${model}">${model}</option>`)
-    .join("");
-
-  modelSelect.value = normalizeModel(selectedModel, finalOptions);
-}
-
-function uniqueModels(models) {
-  return [...new Set(models.filter(Boolean))];
-}
-
-function normalizeModel(candidate, allowedModels = ALLOWED_MODELS) {
-  if (allowedModels.includes(candidate)) {
-    return candidate;
-  }
-
-  if (allowedModels.includes(DEFAULT_MODEL)) {
-    return DEFAULT_MODEL;
-  }
-
-  return allowedModels[0] || DEFAULT_MODEL;
-}
-
-function getSelectedModel() {
-  return normalizeModel(
-    modelSelect.value,
-    Array.from(modelSelect.options).map((option) => option.value),
-  );
 }
 
 async function handleSubmit(event) {
@@ -778,6 +812,7 @@ function renderAll() {
   renderWorkoutSummary();
   renderWorkoutCalendar();
   renderWorkoutEditor();
+  renderRoutinePanel();
   renderCharts();
 }
 
@@ -940,11 +975,282 @@ function renderWorkoutEditorState() {
   workoutEditorStatus.textContent = "";
 }
 
+function renderRoutinePanel() {
+  if (
+    !routineDateLabel ||
+    !routineSearchInput ||
+    !routineSearchResults ||
+    !routineItems ||
+    !routineEditorStatus ||
+    !failureSetRatioInput ||
+    !failureSetRatioValue
+  ) {
+    return;
+  }
+
+  syncRoutineDraftWithSelectedDate();
+  routineDateLabel.textContent = formatDate(selectedWorkoutDate);
+  routineSearchInput.placeholder = `${routineDraft.split} 운동 검색`;
+  failureSetRatioInput.value = String(routineDraft.failureSetRatio);
+  failureSetRatioValue.textContent = `${routineDraft.failureSetRatio}%`;
+
+  routineSplitButtons.forEach((button) => {
+    const isActive = button.dataset.routineSplit === routineDraft.split;
+    button.setAttribute("aria-pressed", isActive ? "true" : "false");
+  });
+
+  renderRoutineSearchResults();
+  renderRoutineItems();
+  renderRoutineEditorState();
+}
+
+function renderRoutineSearchResults() {
+  if (!routineSearchResults) {
+    return;
+  }
+
+  const query = routineSearchInput.value.trim().toLowerCase();
+  const library = EXERCISE_LIBRARY_BY_SPLIT[routineDraft.split] || [];
+  const matches = library
+    .filter((name) => !query || name.toLowerCase().includes(query))
+    .slice(0, 12);
+
+  if (matches.length === 0) {
+    routineSearchResults.innerHTML =
+      '<p class="routine-search-empty">검색 결과가 없습니다.</p>';
+    return;
+  }
+
+  routineSearchResults.innerHTML = matches
+    .map(
+      (name) => `
+        <button type="button" class="routine-search-item ghost" data-add-exercise="${escapeHtml(name)}">
+          <span>${escapeHtml(name)}</span>
+          <span>추가</span>
+        </button>
+      `,
+    )
+    .join("");
+}
+
+function renderRoutineItems() {
+  if (routineDraft.items.length === 0) {
+    routineItems.innerHTML =
+      '<p class="routine-empty">운동을 검색해서 하나씩 추가하세요.</p>';
+    return;
+  }
+
+  routineItems.innerHTML = routineDraft.items
+    .map(
+      (item) => `
+        <article class="routine-editor-item" data-routine-item="${item.id}">
+          <div class="routine-editor-head">
+            <strong data-routine-title>${escapeHtml(item.name) || "새 운동"}</strong>
+            <button type="button" class="ghost routine-delete-button" data-delete-routine-item="${item.id}">삭제</button>
+          </div>
+          <div class="routine-editor-grid">
+            <label>
+              세트
+              <input type="text" data-routine-field="sets" data-routine-id="${item.id}" placeholder="예: 4세트" value="${escapeHtml(item.sets)}" />
+            </label>
+            <label>
+              횟수
+              <input type="text" data-routine-field="reps" data-routine-id="${item.id}" placeholder="예: 8~10회" value="${escapeHtml(item.reps)}" />
+            </label>
+            <label>
+              중량
+              <input type="text" data-routine-field="weight" data-routine-id="${item.id}" placeholder="예: 60kg" value="${escapeHtml(item.weight)}" />
+            </label>
+          </div>
+        </article>
+      `,
+    )
+    .join("");
+}
+
+function renderRoutineEditorState() {
+  const savedRoutine = dailyRoutines[selectedWorkoutDate] || null;
+
+  if (!savedRoutine && routineDraft.items.length === 0) {
+    routineEditorStatus.textContent = `${formatDate(selectedWorkoutDate)} 루틴이 아직 없습니다.`;
+    return;
+  }
+
+  if (!savedRoutine) {
+    routineEditorStatus.textContent = `${formatDate(selectedWorkoutDate)} 루틴을 저장할 수 있습니다.`;
+    return;
+  }
+
+  if (areRoutinesEqual(savedRoutine, routineDraft)) {
+    routineEditorStatus.textContent = `${formatDate(selectedWorkoutDate)} 루틴이 저장되어 있습니다.`;
+    return;
+  }
+
+  routineEditorStatus.textContent = `${formatDate(selectedWorkoutDate)} 루틴 수정 사항을 저장할 수 있습니다.`;
+}
+
+function syncRoutineDraftWithSelectedDate() {
+  if (routineDraftDate === selectedWorkoutDate) {
+    return;
+  }
+
+  loadRoutineDraft(selectedWorkoutDate);
+}
+
+function loadRoutineDraft(dateString) {
+  routineDraftDate = dateString;
+  if (routineSearchInput) {
+    routineSearchInput.value = "";
+  }
+  const savedRoutine = dailyRoutines[dateString];
+  if (savedRoutine) {
+    routineDraft = cloneRoutine(savedRoutine);
+    saveSettingsData({ activeRoutineSplit: savedRoutine.split });
+    return;
+  }
+
+  routineDraft = createRoutineDraft({
+    split: getPreferredRoutineSplit(),
+  });
+}
+
+function setRoutineDraftSplit(split) {
+  if (!MAIN_WORKOUT_SPLITS.includes(split)) {
+    return;
+  }
+
+  syncRoutineDraftWithSelectedDate();
+  routineDraft.split = split;
+  saveSettingsData({ activeRoutineSplit: split });
+  renderRoutinePanel();
+}
+
+function handleRoutineSearchClick(event) {
+  const button = event.target.closest("[data-add-exercise]");
+  if (!button) {
+    return;
+  }
+
+  syncRoutineDraftWithSelectedDate();
+  routineDraft.items.push(createRoutineItem(button.dataset.addExercise));
+  routineSearchInput.value = "";
+  renderRoutinePanel();
+}
+
+function handleRoutineItemInput(event) {
+  const field = event.target.dataset.routineField;
+  const itemId = event.target.dataset.routineId;
+  if (!field || !itemId) {
+    return;
+  }
+
+  syncRoutineDraftWithSelectedDate();
+  const item = routineDraft.items.find((candidate) => candidate.id === itemId);
+  if (!item) {
+    return;
+  }
+
+  item[field] = String(event.target.value || "").trim();
+  renderRoutineEditorState();
+}
+
+function handleRoutineItemClick(event) {
+  const button = event.target.closest("[data-delete-routine-item]");
+  if (!button) {
+    return;
+  }
+
+  syncRoutineDraftWithSelectedDate();
+  routineDraft.items = routineDraft.items.filter(
+    (item) => item.id !== button.dataset.deleteRoutineItem,
+  );
+  renderRoutinePanel();
+}
+
+function handleFailureSetRatioInput() {
+  syncRoutineDraftWithSelectedDate();
+  routineDraft.failureSetRatio = Number(failureSetRatioInput.value);
+  failureSetRatioValue.textContent = `${routineDraft.failureSetRatio}%`;
+  renderRoutineEditorState();
+}
+
+async function saveDailyRoutine() {
+  syncRoutineDraftWithSelectedDate();
+  const hasIncompleteItems = routineDraft.items.some(
+    (item) => !item.name.trim() || !item.sets.trim() || !item.reps.trim(),
+  );
+  if (hasIncompleteItems) {
+    routineEditorStatus.textContent =
+      "모든 운동에 종목명, 세트, 횟수를 채운 뒤 저장하세요.";
+    return;
+  }
+
+  const payload = sanitizeRoutineValue({
+    date: selectedWorkoutDate,
+    split: routineDraft.split,
+    failureSetRatio: routineDraft.failureSetRatio,
+    items: routineDraft.items,
+  });
+
+  if (!payload) {
+    routineEditorStatus.textContent =
+      "분할을 선택하고, 세트와 횟수가 채워진 운동을 한 개 이상 추가하세요.";
+    return;
+  }
+
+  try {
+    const response = await apiFetchJson(
+      `/api/routines/${encodeURIComponent(selectedWorkoutDate)}`,
+      {
+        method: "PUT",
+        body: JSON.stringify({
+          split: payload.split,
+          failureSetRatio: payload.failureSetRatio,
+          items: payload.items,
+        }),
+      },
+    );
+    dailyRoutines[selectedWorkoutDate] = sanitizeRoutineValue(response.routine);
+    loadRoutineDraft(selectedWorkoutDate);
+    renderRoutinePanel();
+    analysisOutput.textContent = `${formatDate(selectedWorkoutDate)} 루틴을 저장했습니다.`;
+  } catch (error) {
+    routineEditorStatus.textContent = `루틴 저장 실패: ${error.message}`;
+    console.error(error);
+  }
+}
+
+async function deleteDailyRoutine() {
+  const savedRoutine = dailyRoutines[selectedWorkoutDate];
+  if (!savedRoutine) {
+    loadRoutineDraft(selectedWorkoutDate);
+    renderRoutinePanel();
+    return;
+  }
+
+  try {
+    await apiFetchJson(
+      `/api/routines/${encodeURIComponent(selectedWorkoutDate)}`,
+      {
+        method: "DELETE",
+      },
+    );
+    delete dailyRoutines[selectedWorkoutDate];
+    loadRoutineDraft(selectedWorkoutDate);
+    renderRoutinePanel();
+    analysisOutput.textContent = `${formatDate(selectedWorkoutDate)} 루틴을 삭제했습니다.`;
+  } catch (error) {
+    routineEditorStatus.textContent = `루틴 삭제 실패: ${error.message}`;
+    console.error(error);
+  }
+}
+
 function selectWorkoutDate(dateString) {
   selectedWorkoutDate = dateString;
   currentCalendarDate = getMonthAnchor(dateString);
   renderWorkoutCalendar();
   renderWorkoutEditor();
+  renderRoutinePanel();
 }
 
 function shiftCalendarMonth(offset) {
@@ -957,6 +1263,7 @@ function shiftCalendarMonth(offset) {
   renderWorkoutSummary();
   renderWorkoutCalendar();
   renderWorkoutEditor();
+  renderRoutinePanel();
 }
 
 async function saveWorkoutEntry() {
@@ -1134,6 +1441,132 @@ function areWorkoutsEqual(left, right) {
     left?.mainSplit === right?.mainSplit &&
     Boolean(left?.cardio) === Boolean(right?.cardio)
   );
+}
+
+function createRoutineDraft(source = {}) {
+  return {
+    date: source.date || selectedWorkoutDate,
+    split:
+      normalizeRoutineSplitValue(source.split) || getPreferredRoutineSplit(),
+    failureSetRatio:
+      normalizeFailureSetRatio(source.failureSetRatio) ??
+      DEFAULT_FAILURE_SET_RATIO,
+    items: sanitizeRoutineItemsClient(source.items),
+  };
+}
+
+function createRoutineItem(name = "") {
+  return {
+    id: crypto.randomUUID(),
+    name,
+    sets: "",
+    reps: "",
+    weight: "",
+  };
+}
+
+function cloneRoutine(routine) {
+  return {
+    date: routine.date,
+    split: routine.split,
+    failureSetRatio: routine.failureSetRatio,
+    items: routine.items.map((item) => ({ ...item })),
+  };
+}
+
+function sanitizeRoutineValue(value) {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const date =
+    typeof value.date === "string" ? normalizeDateValue(value.date) : "";
+  const split = normalizeRoutineSplitValue(value.split);
+  const failureSetRatio = normalizeFailureSetRatio(value.failureSetRatio);
+  const items = sanitizeRoutineItemsClient(value.items);
+
+  if (!date || !split || failureSetRatio === null || items.length === 0) {
+    return null;
+  }
+
+  return {
+    date,
+    split,
+    failureSetRatio,
+    items,
+  };
+}
+
+function sanitizeRoutineItemsClient(items) {
+  if (!Array.isArray(items)) {
+    return [];
+  }
+
+  return items
+    .filter((item) => item && typeof item === "object")
+    .map((item) => ({
+      id: String(item.id || crypto.randomUUID()),
+      name: String(item.name || "").trim(),
+      sets: String(item.sets || "").trim(),
+      reps: String(item.reps || "").trim(),
+      weight: String(item.weight || "").trim(),
+    }))
+    .filter((item) => item.name && item.sets && item.reps);
+}
+
+function normalizeRoutineSplitValue(value) {
+  const candidate = String(value || "")
+    .trim()
+    .toUpperCase();
+  return MAIN_WORKOUT_SPLITS.includes(candidate) ? candidate : "";
+}
+
+function normalizeFailureSetRatio(value) {
+  const numeric = Number(value);
+  if (
+    !Number.isInteger(numeric) ||
+    numeric < 0 ||
+    numeric > 100 ||
+    numeric % 5 !== 0
+  ) {
+    return null;
+  }
+
+  return numeric;
+}
+
+function areRoutinesEqual(left, right) {
+  if (!left || !right) {
+    return false;
+  }
+
+  if (
+    left.date !== (right.date || left.date) ||
+    left.split !== right.split ||
+    left.failureSetRatio !== right.failureSetRatio ||
+    left.items.length !== right.items.length
+  ) {
+    return false;
+  }
+
+  return left.items.every((item, index) => {
+    const candidate = right.items[index];
+    return (
+      item.name === String(candidate?.name || "").trim() &&
+      item.sets === String(candidate?.sets || "").trim() &&
+      item.reps === String(candidate?.reps || "").trim() &&
+      item.weight === String(candidate?.weight || "").trim()
+    );
+  });
+}
+
+function getPreferredRoutineSplit() {
+  const candidate = String(loadSettings().activeRoutineSplit || "")
+    .trim()
+    .toUpperCase();
+  return MAIN_WORKOUT_SPLITS.includes(candidate)
+    ? candidate
+    : MAIN_WORKOUT_SPLITS[0];
 }
 
 function renderCharts() {
@@ -1594,7 +2027,7 @@ function updateHeroScrollScene() {
   const sceneStart = scrollTop + rect.top;
   const sceneTravel = Math.max(rect.height * 0.58, viewportHeight * 0.52);
   const rawProgress = clamp((scrollTop - sceneStart) / sceneTravel, 0, 1);
-  const titleProgress = easeOutCubic(rawProgress * 0.9);
+  const titleProgress = easeOutCubic(rawProgress * 0.95);
 
   applyHeroSceneProgress(titleProgress);
 }
@@ -1623,14 +2056,10 @@ function handleWindowResize() {
 async function generateAnalysis() {
   if (records.length === 0) {
     analysisOutput.textContent = "평가할 기록이 없습니다.";
-    renderRoutinePlaceholder(
-      "평가를 생성하면 오늘 추천 운동 루틴이 여기에 표시됩니다.",
-    );
     return;
   }
 
   analysisOutput.textContent = "평가를 생성하고 있습니다...";
-  renderRoutineLoading();
 
   const latest = getSortedRecordsDesc()[0];
   const trend = buildTrendSummary();
@@ -1639,10 +2068,7 @@ async function generateAnalysis() {
     WORKOUT_LOOKBACK_DAYS,
     latest.date,
   );
-  const fallbackRoutine = buildLocalRoutineRecommendation(
-    latest,
-    recentWorkouts,
-  );
+  const latestRoutine = dailyRoutines[latest.date] || null;
 
   try {
     const response = await fetch("/api/analyze", {
@@ -1651,12 +2077,19 @@ async function generateAnalysis() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: getSelectedModel(),
         latest,
         trend,
         records: [...records].sort(sortByDate).slice(-8),
         profile,
         workouts: recentWorkouts,
+        routineDate: latest.date,
+        routine: latestRoutine
+          ? {
+              split: latestRoutine.split,
+              items: latestRoutine.items,
+            }
+          : null,
+        failureSetRatio: latestRoutine?.failureSetRatio ?? null,
       }),
     });
 
@@ -1671,16 +2104,13 @@ async function generateAnalysis() {
 
     const result = await response.json();
     analysisOutput.textContent = result.analysis;
-    renderRoutineOutput(normalizeRoutine(result.routine) || fallbackRoutine);
   } catch (error) {
-    analysisOutput.textContent = [
-      `AI 호출 실패: ${error.message}`,
-      "",
-      buildLocalEvaluation(latest, trend),
-      "",
-      "서버 로그에서 같은 오류를 확인할 수 있습니다.",
-    ].join("\n");
-    renderRoutineOutput(fallbackRoutine, { fallback: true });
+    analysisOutput.textContent = buildLocalEvaluation(
+      latest,
+      trend,
+      latestRoutine,
+      error.message,
+    );
     console.error(error);
   }
 }
@@ -1701,7 +2131,7 @@ function buildTrendSummary() {
   ].join(", ");
 }
 
-function buildLocalEvaluation(latest, trend) {
+function buildLocalEvaluation(latest, trend, routine, errorMessage = "") {
   const data = [...records].sort(sortByDate);
   const previous = data[data.length - 2];
   const lines = [];
@@ -1712,11 +2142,22 @@ function buildLocalEvaluation(latest, trend) {
       1,
     )}%, 골격근량 ${latest.muscle.toFixed(1)}kg입니다.`,
   );
+  if (trend) {
+    lines.push(`최근 변화: ${trend}.`);
+  }
 
   if (!previous) {
     lines.push("");
-    lines.push("2) 추세 해석");
-    lines.push("첫 기록이라 추세 판단은 아직 이릅니다.");
+    lines.push("2) 루틴 평가");
+    if (routine) {
+      lines.push(
+        `${routine.split} 루틴 ${routine.items.length}개 종목과 실패지점 세트 비율 ${routine.failureSetRatio}%가 저장되어 있습니다.`,
+      );
+    } else {
+      lines.push(
+        "최신 기록 날짜에 저장된 루틴이 없어 루틴 평가는 제한적입니다.",
+      );
+    }
     lines.push("");
     lines.push("3) 다음 행동 제안");
     lines.push(
@@ -1725,6 +2166,9 @@ function buildLocalEvaluation(latest, trend) {
     lines.push(
       "식단과 영양제 루틴도 함께 기록해두면 다음 평가에서 해석 정확도가 올라갑니다.",
     );
+    if (errorMessage) {
+      lines.push(`AI 호출 실패: ${errorMessage}`);
+    }
     return lines.join("\n");
   }
 
@@ -1733,25 +2177,16 @@ function buildLocalEvaluation(latest, trend) {
   const weightDelta = latest.weight - previous.weight;
 
   lines.push("");
-  lines.push("2) 추세 해석");
-  lines.push(`${trend}.`);
-
-  if (fatDelta < 0 && muscleDelta >= 0) {
+  lines.push("2) 루틴 평가");
+  if (routine) {
     lines.push(
-      "체지방률이 내려가고 근육량이 유지되거나 증가해 비교적 좋은 방향입니다.",
+      `${routine.split} 루틴 ${routine.items.length}개 종목, 실패지점 수행 세트 비율 ${routine.failureSetRatio}%가 저장되어 있습니다.`,
     );
-  } else if (fatDelta > 0 && muscleDelta <= 0) {
     lines.push(
-      "체지방률 상승과 근육량 하락이 함께 보여 관리 우선순위를 점검할 필요가 있습니다.",
-    );
-  } else if (Math.abs(weightDelta) < 0.3) {
-    lines.push(
-      "체중 변화는 작지만 체성분 비율 변화에 더 주목하는 편이 좋습니다.",
+      "세트 수와 반복 수, 중량이 꾸준히 기록되면 체성분 변화와 루틴 적합도를 더 명확하게 해석할 수 있습니다.",
     );
   } else {
-    lines.push(
-      "한 번의 변화만으로 단정하기보다 다음 측정까지 같은 조건으로 추적하는 것이 안전합니다.",
-    );
+    lines.push("최신 기록 날짜에 저장된 루틴이 없어 루틴 평가는 제한적입니다.");
   }
 
   lines.push("");
@@ -1765,51 +2200,19 @@ function buildLocalEvaluation(latest, trend) {
       "현재 패턴을 유지하면서 수면과 운동 강도의 일관성을 관리하세요.",
     );
   }
+  if (!routine) {
+    lines.push(
+      "최신 기록 날짜 루틴을 함께 저장해두면 다음 평가에서 운동 구성까지 같이 볼 수 있습니다.",
+    );
+  }
   lines.push(
     "프로필에 저장한 식단 전략과 영양제 루틴도 같이 점검하면 해석이 더 현실적입니다.",
   );
-
-  return lines.join("\n");
-}
-
-function renderRoutineLoading() {
-  routineOutput.textContent = "추천 루틴을 생성하고 있습니다...";
-}
-
-function renderRoutinePlaceholder(message) {
-  routineOutput.textContent = message;
-}
-
-function renderRoutineOutput(routine, options = {}) {
-  if (!routine) {
-    renderRoutinePlaceholder("추천 가능한 루틴이 없습니다.");
-    return;
+  if (errorMessage) {
+    lines.push(`AI 호출 실패: ${errorMessage}`);
   }
 
-  const splitLabel = getRoutineSplitLabel(routine.recommendedSplit);
-  const exercises = routine.exercises
-    .map(
-      (exercise) => `
-        <div class="routine-item">
-          <strong>${escapeHtml(exercise.name)}</strong>
-          <span class="routine-item-meta">${escapeHtml(exercise.sets)} · ${escapeHtml(exercise.reps)}</span>
-          ${exercise.note ? `<span class="routine-item-note">${escapeHtml(exercise.note)}</span>` : ""}
-        </div>
-      `,
-    )
-    .join("");
-
-  routineOutput.innerHTML = `
-    <div class="routine-card">
-      <div class="routine-head">
-        <span class="routine-split">${splitLabel}</span>
-        ${options.fallback ? '<span class="routine-split">로컬 추천</span>' : ""}
-      </div>
-      <p class="routine-reason">${escapeHtml(routine.reason)}</p>
-      <div class="routine-exercises">${exercises}</div>
-      ${routine.cardioNote ? `<p class="routine-cardio">${escapeHtml(routine.cardioNote)}</p>` : ""}
-    </div>
-  `;
+  return lines.join("\n");
 }
 
 function normalizeRoutine(routine) {
@@ -2016,7 +2419,8 @@ function openDatePicker() {
   }
 
   const normalized = normalizeDateValue(dateInput.value);
-  datePickerProxy.value = normalized || datePickerProxy.value || getTodayLocalDate();
+  datePickerProxy.value =
+    normalized || datePickerProxy.value || getTodayLocalDate();
 
   if (typeof datePickerProxy.showPicker === "function") {
     datePickerProxy.showPicker();
