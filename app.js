@@ -108,10 +108,9 @@ const datePickerButton = document.getElementById("date-picker-button");
 const datePickerProxy = document.getElementById("date-picker-proxy");
 const historyBody = document.getElementById("history-body");
 const latestSummary = document.getElementById("latest-summary");
-const analysisOutput = document.getElementById("analysis-output");
-const serverStatus = document.getElementById("server-status");
-const analysisModelBadge = document.getElementById("analysis-model");
-const analysisQueryInput = document.getElementById("analysis-query");
+const appStatus = document.getElementById("app-status");
+const routineDisplay = document.getElementById("routine-display");
+const routineDisplayDate = document.getElementById("routine-display-date");
 const themeToggle = document.getElementById("theme-toggle");
 const heroStack = document.getElementById("hero-stack");
 const routineDateLabel = document.getElementById("routine-date-label");
@@ -248,20 +247,10 @@ bootstrap();
 async function bootstrap() {
   setDateInputValue();
   applySavedTheme();
-  if (analysisModelBadge) {
-    analysisModelBadge.textContent = "GPT-5 mini";
-  }
-  if (analysisQueryInput) {
-    const savedAnalysisQuery = loadSettings().analysisQuery;
-    analysisQueryInput.value =
-      typeof savedAnalysisQuery === "string" ? savedAnalysisQuery : "";
-  }
-  renderServerStatus("loading");
   renderProfile();
   renderAll();
   bindEvents();
   syncHeroScrollScene();
-  await loadServerConfig();
   await loadPersistedData();
 }
 
@@ -278,14 +267,6 @@ function bindEvents() {
   document
     .getElementById("reset-storage")
     .addEventListener("click", resetStorage);
-  document
-    .getElementById("run-analysis")
-    .addEventListener("click", generateAnalysis);
-  if (analysisQueryInput) {
-    analysisQueryInput.addEventListener("input", () =>
-      saveSettingsData({ analysisQuery: analysisQueryInput.value }),
-    );
-  }
   themeToggle.addEventListener("click", toggleTheme);
   routineSplitButtons.forEach((button) => {
     button.addEventListener("click", () =>
@@ -409,7 +390,7 @@ async function loadPersistedData() {
     routineDraftDate = "";
     renderProfile();
     renderAll();
-    analysisOutput.textContent = `저장된 데이터를 불러오지 못했습니다: ${error.message}`;
+    appStatus.textContent = `저장된 데이터를 불러오지 못했습니다: ${error.message}`;
     console.error(error);
   }
 }
@@ -483,7 +464,7 @@ async function migrateLegacyLocalData() {
   }
 
   localStorage.setItem(LEGACY_MIGRATION_FLAG, "done");
-  analysisOutput.textContent = "예전 브라우저 데이터를 DB로 옮겼습니다.";
+  appStatus.textContent = "예전 브라우저 데이터를 DB로 옮겼습니다.";
   return true;
 }
 
@@ -606,9 +587,9 @@ async function saveProfile() {
     profileText.value = profileContent;
     setProfileStatus("saved");
     setProfileEditing(false);
-    analysisOutput.textContent = "생활 방식과 목표를 저장했습니다.";
+    appStatus.textContent = "생활 방식과 목표를 저장했습니다.";
   } catch (error) {
-    analysisOutput.textContent = `프로필 저장 실패: ${error.message}`;
+    appStatus.textContent = `프로필 저장 실패: ${error.message}`;
     console.error(error);
   }
 }
@@ -722,7 +703,7 @@ async function handleSubmit(event) {
   if (!normalizedDate) {
     dateInput.setCustomValidity("Use YYYY-MM-DD.");
     dateInput.reportValidity();
-    analysisOutput.textContent = "Enter the date as YYYY-MM-DD.";
+    appStatus.textContent = "Enter the date as YYYY-MM-DD.";
     return;
   }
 
@@ -741,7 +722,7 @@ async function handleSubmit(event) {
     !entry.date ||
     [entry.weight, entry.bodyFat, entry.muscle].some(Number.isNaN)
   ) {
-    analysisOutput.textContent = "입력값을 다시 확인하세요.";
+    appStatus.textContent = "입력값을 다시 확인하세요.";
     return;
   }
 
@@ -757,10 +738,10 @@ async function handleSubmit(event) {
     renderAll();
     form.reset();
     setDateInputValue();
-    analysisOutput.textContent =
+    appStatus.textContent =
       "기록을 저장했습니다. 평가 생성 버튼으로 최신 상태를 다시 확인하세요.";
   } catch (error) {
-    analysisOutput.textContent = `기록 저장 실패: ${error.message}`;
+    appStatus.textContent = `기록 저장 실패: ${error.message}`;
     console.error(error);
   }
   return;
@@ -773,7 +754,7 @@ async function handleSubmit(event) {
   renderAll();
   form.reset();
   setDateInputValue();
-  analysisOutput.textContent =
+  appStatus.textContent =
     "기록을 저장했습니다. 평가 생성 버튼으로 해석을 확인할 수 있습니다.";
 }
 
@@ -790,9 +771,9 @@ async function resetStorage() {
     records = [];
     renderAll();
     closeChartModal({ immediate: true });
-    analysisOutput.textContent = "모든 인바디 기록을 삭제했습니다.";
+    appStatus.textContent = "모든 인바디 기록을 삭제했습니다.";
   } catch (error) {
-    analysisOutput.textContent = `기록 전체 삭제 실패: ${error.message}`;
+    appStatus.textContent = `기록 전체 삭제 실패: ${error.message}`;
     console.error(error);
   }
   return;
@@ -801,7 +782,7 @@ async function resetStorage() {
   saveRecords();
   renderAll();
   closeChartModal({ immediate: true });
-  analysisOutput.textContent = "모든 인바디 기록을 삭제했습니다.";
+  appStatus.textContent = "모든 인바디 기록을 삭제했습니다.";
 }
 
 async function deleteRecord(id) {
@@ -811,9 +792,9 @@ async function deleteRecord(id) {
     });
     records = records.filter((record) => record.id !== id);
     renderAll();
-    analysisOutput.textContent = "선택한 기록을 삭제했습니다.";
+    appStatus.textContent = "선택한 기록을 삭제했습니다.";
   } catch (error) {
-    analysisOutput.textContent = `기록 삭제 실패: ${error.message}`;
+    appStatus.textContent = `기록 삭제 실패: ${error.message}`;
     console.error(error);
   }
   return;
@@ -821,7 +802,7 @@ async function deleteRecord(id) {
   records = records.filter((record) => record.id !== id);
   saveRecords();
   renderAll();
-  analysisOutput.textContent = "선택한 기록을 삭제했습니다.";
+  appStatus.textContent = "선택한 기록을 삭제했습니다.";
 }
 
 function renderAll() {
@@ -1051,6 +1032,7 @@ function renderRoutinePanel() {
   }
 
   renderRoutineEditorState();
+  renderRoutineDisplay();
 }
 
 function renderRoutineSearchResults() {
@@ -1122,6 +1104,26 @@ function renderRoutineSummary(routine) {
     return;
   }
 
+  routineSummary.innerHTML = buildRoutineSummaryMarkup(routine);
+}
+
+function renderRoutineDisplay() {
+  if (!routineDisplay || !routineDisplayDate) {
+    return;
+  }
+
+  routineDisplayDate.textContent = formatDate(selectedWorkoutDate);
+  const savedRoutine = dailyRoutines[selectedWorkoutDate] || null;
+  if (!savedRoutine) {
+    routineDisplay.innerHTML =
+      '<p class="routine-display-empty">선택한 날짜에 저장된 루틴이 없습니다.</p>';
+    return;
+  }
+
+  routineDisplay.innerHTML = buildRoutineSummaryMarkup(savedRoutine);
+}
+
+function buildRoutineSummaryMarkup(routine) {
   const totalSets = routine.items.reduce(
     (sum, item) => sum + getRoutineSetCount(item.sets),
     0,
@@ -1137,7 +1139,7 @@ function renderRoutineSummary(routine) {
     )
     .join("");
 
-  routineSummary.innerHTML = `
+  return `
     <div class="routine-summary-head">
       <span class="routine-summary-pill">${escapeHtml(routine.split)}</span>
       <span class="routine-summary-pill">실패지점 세트 ${routine.failureSetRatio}%</span>
@@ -1321,7 +1323,7 @@ async function saveDailyRoutine() {
     loadRoutineDraft(selectedWorkoutDate);
     isRoutineSummaryCollapsed = true;
     renderRoutinePanel();
-    analysisOutput.textContent = `${formatDate(selectedWorkoutDate)} 루틴을 저장했습니다.`;
+    appStatus.textContent = `${formatDate(selectedWorkoutDate)} 루틴을 저장했습니다.`;
   } catch (error) {
     routineEditorStatus.textContent = `루틴 저장 실패: ${error.message}`;
     console.error(error);
@@ -1348,7 +1350,7 @@ async function deleteDailyRoutine() {
     isRoutineSummaryCollapsed = false;
     loadRoutineDraft(selectedWorkoutDate);
     renderRoutinePanel();
-    analysisOutput.textContent = `${formatDate(selectedWorkoutDate)} 루틴을 삭제했습니다.`;
+    appStatus.textContent = `${formatDate(selectedWorkoutDate)} 루틴을 삭제했습니다.`;
   } catch (error) {
     routineEditorStatus.textContent = `루틴 삭제 실패: ${error.message}`;
     console.error(error);
@@ -1391,9 +1393,9 @@ async function saveWorkoutEntry() {
       renderWorkoutSummary();
       renderWorkoutCalendar();
       renderWorkoutEditor();
-      analysisOutput.textContent = `${formatDate(selectedWorkoutDate)}을 운동하지 않은 날로 저장했습니다.`;
+      appStatus.textContent = `${formatDate(selectedWorkoutDate)}을 운동하지 않은 날로 저장했습니다.`;
     } catch (error) {
-      analysisOutput.textContent = `운동 기록 저장 실패: ${error.message}`;
+      appStatus.textContent = `운동 기록 저장 실패: ${error.message}`;
       console.error(error);
     }
     return;
@@ -1403,7 +1405,7 @@ async function saveWorkoutEntry() {
     renderWorkoutSummary();
     renderWorkoutCalendar();
     renderWorkoutEditor();
-    analysisOutput.textContent = `${formatDate(selectedWorkoutDate)}를 운동하지 않은 날로 저장했습니다.`;
+    appStatus.textContent = `${formatDate(selectedWorkoutDate)}를 운동하지 않은 날로 저장했습니다.`;
     return;
   }
 
@@ -1419,9 +1421,9 @@ async function saveWorkoutEntry() {
     renderWorkoutSummary();
     renderWorkoutCalendar();
     renderWorkoutEditor();
-    analysisOutput.textContent = `${formatDate(selectedWorkoutDate)} ${getWorkoutDisplayLabel(payload.workout)} 운동 기록을 저장했습니다.`;
+    appStatus.textContent = `${formatDate(selectedWorkoutDate)} ${getWorkoutDisplayLabel(payload.workout)} 운동 기록을 저장했습니다.`;
   } catch (error) {
-    analysisOutput.textContent = `운동 기록 저장 실패: ${error.message}`;
+    appStatus.textContent = `운동 기록 저장 실패: ${error.message}`;
     console.error(error);
   }
   return;
@@ -1431,7 +1433,7 @@ async function saveWorkoutEntry() {
   renderWorkoutSummary();
   renderWorkoutCalendar();
   renderWorkoutEditor();
-  analysisOutput.textContent = `${formatDate(selectedWorkoutDate)} ${getWorkoutDisplayLabel(selected)} 운동 기록을 저장했습니다.`;
+  appStatus.textContent = `${formatDate(selectedWorkoutDate)} ${getWorkoutDisplayLabel(selected)} 운동 기록을 저장했습니다.`;
 }
 
 async function deleteWorkoutEntry() {
@@ -1453,9 +1455,9 @@ async function deleteWorkoutEntry() {
     renderWorkoutSummary();
     renderWorkoutCalendar();
     renderWorkoutEditor();
-    analysisOutput.textContent = `${formatDate(selectedWorkoutDate)} 운동 기록을 삭제했습니다.`;
+    appStatus.textContent = `${formatDate(selectedWorkoutDate)} 운동 기록을 삭제했습니다.`;
   } catch (error) {
-    analysisOutput.textContent = `운동 기록 삭제 실패: ${error.message}`;
+    appStatus.textContent = `운동 기록 삭제 실패: ${error.message}`;
     console.error(error);
   }
   return;
@@ -1465,7 +1467,7 @@ async function deleteWorkoutEntry() {
   renderWorkoutSummary();
   renderWorkoutCalendar();
   renderWorkoutEditor();
-  analysisOutput.textContent = `${formatDate(selectedWorkoutDate)} 운동 기록을 삭제했습니다.`;
+  appStatus.textContent = `${formatDate(selectedWorkoutDate)} 운동 기록을 삭제했습니다.`;
 }
 
 function toggleWorkoutType(type) {
@@ -2165,17 +2167,17 @@ function handleWindowResize() {
 
 async function generateAnalysis() {
   if (records.length === 0) {
-    analysisOutput.textContent = "평가할 인바디 기록이 없습니다.";
+    appStatus.textContent = "평가할 인바디 기록이 없습니다.";
     return;
   }
 
   const analysisContext = getSelectedAnalysisContext();
   if (!analysisContext) {
-    analysisOutput.textContent = `${formatDate(selectedWorkoutDate)} 기준으로 평가할 인바디 기록이 없습니다. 선택 날짜 이전에 저장한 인바디 기록을 먼저 남겨주세요.`;
+    appStatus.textContent = `${formatDate(selectedWorkoutDate)} 기준으로 평가할 인바디 기록이 없습니다. 선택 날짜 이전에 저장한 인바디 기록을 먼저 남겨주세요.`;
     return;
   }
 
-  analysisOutput.textContent = `${formatDate(selectedWorkoutDate)} 기준 평가를 생성하고 있습니다...`;
+  appStatus.textContent = `${formatDate(selectedWorkoutDate)} 기준 평가를 생성하고 있습니다...`;
 
   const { analysisDate, latest, trend, analysisRecords, recentWorkouts, routine } =
     analysisContext;
@@ -2217,9 +2219,9 @@ async function generateAnalysis() {
     }
 
     const result = await response.json();
-    analysisOutput.textContent = result.analysis;
+    appStatus.textContent = result.analysis;
   } catch (error) {
-    analysisOutput.textContent = buildLocalEvaluation({
+    appStatus.textContent = buildLocalEvaluation({
       analysisDate,
       latest,
       trend,
@@ -2695,4 +2697,5 @@ function getTodayLocalDate() {
   const offset = today.getTimezoneOffset() * 60000;
   return new Date(today.getTime() - offset).toISOString().slice(0, 10);
 }
+
 

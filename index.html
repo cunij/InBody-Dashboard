@@ -312,37 +312,20 @@
 
         <section class="panel ai-panel">
           <div class="panel-head panel-head-inline">
-            <div class="analysis-heading">
-              <h2>AI 평가</h2>
-              <span id="analysis-model" class="analysis-model-label">GPT-5 mini</span>
+            <div>
+              <h2>루틴 보기</h2>
             </div>
-            <p id="server-status" class="status-line">
-              서버 설정을 확인하고 있습니다...
-            </p>
-          </div>
-
-          <label class="analysis-query-field">
-            <span class="analysis-query-label">AI 쿼리</span>
-            <textarea
-              id="analysis-query"
-              class="analysis-query-input"
-              placeholder="예: 오늘 기록 기준으로 벌크 방향이 맞는지, 루틴 볼륨이 과한지 같이 봐줘"
-            ></textarea>
-          </label>
-
-          <div class="form-actions">
-            <button type="button" id="run-analysis" class="primary">
-              평가 생성
-            </button>
+            <strong id="routine-display-date" class="routine-date-label">-</strong>
           </div>
 
           <div class="analysis-box">
-            <p class="section-label">평가 결과</p>
-            <div id="analysis-output" class="analysis-output">
-              최근 기록을 남기면 여기에 AI 평가 또는 로컬 분석 결과가
-              표시됩니다.
+            <p class="section-label">저장된 루틴</p>
+            <div id="routine-display" class="analysis-output">
+              선택한 날짜에 저장된 루틴이 없습니다.
             </div>
           </div>
+
+          <p id="app-status" class="status-line"></p>
         </section>
       </main>
 
