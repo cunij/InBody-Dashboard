@@ -991,41 +991,38 @@ function renderRoutinePanel() {
 
   syncRoutineDraftWithSelectedDate();
   const savedRoutine = dailyRoutines[selectedWorkoutDate] || null;
-  const isSavedDraft =
-    Boolean(savedRoutine) && areRoutinesEqual(savedRoutine, routineDraft);
-  const showSummary = isSavedDraft && isRoutineSummaryCollapsed;
+  const showCollapsed = Boolean(savedRoutine) && isRoutineSummaryCollapsed;
   const showDeleteButton =
-    !showSummary && (Boolean(savedRoutine) || routineDraft.items.length > 0);
+    !showCollapsed && (Boolean(savedRoutine) || routineDraft.items.length > 0);
 
   routineDateLabel.textContent = formatDate(selectedWorkoutDate);
   routineSearchInput.placeholder = `${routineDraft.split} 운동 검색`;
   failureSetRatioInput.value = String(routineDraft.failureSetRatio);
   failureSetRatioValue.textContent = `${routineDraft.failureSetRatio}%`;
-  routineBuilder.hidden = showSummary;
-  routineSummary.hidden = !showSummary;
+  routineBuilder.hidden = showCollapsed;
+  routineSummary.hidden = true;
+  routineSummary.innerHTML = "";
 
   if (editRoutineButton) {
-    editRoutineButton.hidden = !showSummary;
+    editRoutineButton.hidden = !showCollapsed;
   }
 
   if (saveRoutineButton) {
-    saveRoutineButton.hidden = showSummary;
+    saveRoutineButton.hidden = showCollapsed;
   }
 
   if (deleteRoutineButton) {
     deleteRoutineButton.hidden = !showDeleteButton;
   }
 
-  routineEditorStatus.hidden = showSummary;
+  routineEditorStatus.hidden = showCollapsed;
 
   routineSplitButtons.forEach((button) => {
     const isActive = button.dataset.routineSplit === routineDraft.split;
     button.setAttribute("aria-pressed", isActive ? "true" : "false");
   });
 
-  if (showSummary) {
-    renderRoutineSummary(savedRoutine);
-  } else {
+  if (!showCollapsed) {
     routineSummary.innerHTML = "";
     renderRoutineSearchResults();
     renderRoutineItems();
