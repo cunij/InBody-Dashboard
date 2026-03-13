@@ -293,6 +293,31 @@ html[data-theme="dark"] button::before {
   font-weight: 600;
 }
 
+.date-input-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.date-picker-button {
+  padding-inline: 14px;
+  white-space: nowrap;
+}
+
+.date-picker-proxy {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  padding: 0;
+  border: 0;
+}
+
 input,
 select,
 textarea {

@@ -119,15 +119,21 @@
           <form id="inbody-form" class="data-form stacked-form">
             <label>
               날짜
-              <input
-                type="text"
-                id="date"
-                name="date"
-                inputmode="numeric"
-                autocomplete="off"
-                placeholder="YYYY-MM-DD"
-                required
-              />
+              <div class="date-input-row">
+                <input
+                  type="text"
+                  id="date"
+                  name="date"
+                  inputmode="numeric"
+                  autocomplete="off"
+                  placeholder="YYYY-MM-DD"
+                  required
+                />
+                <button type="button" id="date-picker-button" class="ghost date-picker-button">
+                  달력
+                </button>
+                <input type="date" id="date-picker-proxy" class="date-picker-proxy" tabindex="-1" aria-hidden="true" />
+              </div>
             </label>
             <label>
               체중 (kg)

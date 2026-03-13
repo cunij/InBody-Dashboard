@@ -69,6 +69,8 @@ const DEFAULT_PROFILE = `## 1. Basic Profile
 
 const form = document.getElementById("inbody-form");
 const dateInput = document.getElementById("date");
+const datePickerButton = document.getElementById("date-picker-button");
+const datePickerProxy = document.getElementById("date-picker-proxy");
 const historyBody = document.getElementById("history-body");
 const latestSummary = document.getElementById("latest-summary");
 const analysisOutput = document.getElementById("analysis-output");
@@ -107,7 +109,9 @@ const chartModalTitle = document.getElementById("chart-modal-title");
 const chartModalCanvas = document.getElementById("chart-modal-canvas");
 const chartModalTooltip = document.getElementById("chart-modal-tooltip");
 const chartModalStage = chartModalCanvas.parentElement;
-const reducedMotionMedia = window.matchMedia("(prefers-reduced-motion: reduce)");
+const reducedMotionMedia = window.matchMedia(
+  "(prefers-reduced-motion: reduce)",
+);
 
 const chartElements = {
   weight: {
@@ -206,6 +210,12 @@ function bindEvents() {
   form.addEventListener("submit", handleSubmit);
   dateInput.addEventListener("blur", normalizeDateInput);
   dateInput.addEventListener("input", clearDateInputValidity);
+  if (datePickerButton) {
+    datePickerButton.addEventListener("click", openDatePicker);
+  }
+  if (datePickerProxy) {
+    datePickerProxy.addEventListener("change", syncDateFromPicker);
+  }
   document
     .getElementById("reset-storage")
     .addEventListener("click", resetStorage);
@@ -342,8 +352,12 @@ function shouldRunLegacyMigration() {
 
 async function migrateLegacyLocalData() {
   const legacyRecords = sanitizeRecords(readLegacyJson(LEGACY_RECORDS_KEY, []));
-  const legacyWorkouts = sanitizeWorkouts(readLegacyJson(LEGACY_WORKOUTS_KEY, {}));
-  const legacyProfile = String(localStorage.getItem(LEGACY_PROFILE_KEY) || "").trim();
+  const legacyWorkouts = sanitizeWorkouts(
+    readLegacyJson(LEGACY_WORKOUTS_KEY, {}),
+  );
+  const legacyProfile = String(
+    localStorage.getItem(LEGACY_PROFILE_KEY) || "",
+  ).trim();
 
   if (
     legacyRecords.length === 0 &&
@@ -382,7 +396,9 @@ async function migrateLegacyLocalData() {
 
 function readLegacyJson(key, fallbackValue) {
   try {
-    return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallbackValue));
+    return JSON.parse(
+      localStorage.getItem(key) || JSON.stringify(fallbackValue),
+    );
   } catch {
     return fallbackValue;
   }
@@ -948,9 +964,12 @@ async function saveWorkoutEntry() {
 
   if (!selected.mainSplit && !selected.cardio) {
     try {
-      await apiFetchJson(`/api/workouts/${encodeURIComponent(selectedWorkoutDate)}`, {
-        method: "DELETE",
-      });
+      await apiFetchJson(
+        `/api/workouts/${encodeURIComponent(selectedWorkoutDate)}`,
+        {
+          method: "DELETE",
+        },
+      );
       delete workouts[selectedWorkoutDate];
       renderWorkoutSummary();
       renderWorkoutCalendar();
@@ -972,10 +991,13 @@ async function saveWorkoutEntry() {
   }
 
   try {
-    const payload = await apiFetchJson(`/api/workouts/${encodeURIComponent(selectedWorkoutDate)}`, {
-      method: "PUT",
-      body: JSON.stringify(selected),
-    });
+    const payload = await apiFetchJson(
+      `/api/workouts/${encodeURIComponent(selectedWorkoutDate)}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(selected),
+      },
+    );
     workouts[selectedWorkoutDate] = payload.workout;
     renderWorkoutSummary();
     renderWorkoutCalendar();
@@ -1004,9 +1026,12 @@ async function deleteWorkoutEntry() {
   }
 
   try {
-    await apiFetchJson(`/api/workouts/${encodeURIComponent(selectedWorkoutDate)}`, {
-      method: "DELETE",
-    });
+    await apiFetchJson(
+      `/api/workouts/${encodeURIComponent(selectedWorkoutDate)}`,
+      {
+        method: "DELETE",
+      },
+    );
     delete workouts[selectedWorkoutDate];
     renderWorkoutSummary();
     renderWorkoutCalendar();
@@ -1567,12 +1592,9 @@ function updateHeroScrollScene() {
     window.innerHeight || document.documentElement.clientHeight;
   const scrollTop = window.scrollY || window.pageYOffset || 0;
   const sceneStart = scrollTop + rect.top;
-  const sceneTravel = Math.max(
-    rect.height * 0.58,
-    viewportHeight * 0.52,
-  );
+  const sceneTravel = Math.max(rect.height * 0.58, viewportHeight * 0.52);
   const rawProgress = clamp((scrollTop - sceneStart) / sceneTravel, 0, 1);
-  const titleProgress = easeOutCubic(rawProgress * 0.78);
+  const titleProgress = easeOutCubic(rawProgress * 0.9);
 
   applyHeroSceneProgress(titleProgress);
 }
@@ -1773,7 +1795,7 @@ function renderRoutineOutput(routine, options = {}) {
           <span class="routine-item-meta">${escapeHtml(exercise.sets)} · ${escapeHtml(exercise.reps)}</span>
           ${exercise.note ? `<span class="routine-item-note">${escapeHtml(exercise.note)}</span>` : ""}
         </div>
-      `
+      `,
     )
     .join("");
 
@@ -1796,7 +1818,8 @@ function normalizeRoutine(routine) {
   }
 
   const split = normalizeRoutineSplit(routine.recommendedSplit);
-  const reason = typeof routine.reason === "string" ? routine.reason.trim() : "";
+  const reason =
+    typeof routine.reason === "string" ? routine.reason.trim() : "";
   const exercises = Array.isArray(routine.exercises)
     ? routine.exercises
         .filter((exercise) => exercise && typeof exercise === "object")
@@ -1809,7 +1832,8 @@ function normalizeRoutine(routine) {
         .filter((exercise) => exercise.name && exercise.sets && exercise.reps)
         .slice(0, 6)
     : [];
-  const cardioNote = typeof routine.cardioNote === "string" ? routine.cardioNote.trim() : "";
+  const cardioNote =
+    typeof routine.cardioNote === "string" ? routine.cardioNote.trim() : "";
 
   if (!split || !reason || exercises.length < 4) {
     return null;
@@ -1824,7 +1848,9 @@ function normalizeRoutine(routine) {
 }
 
 function normalizeRoutineSplit(split) {
-  const candidate = String(split || "").trim().toUpperCase();
+  const candidate = String(split || "")
+    .trim()
+    .toUpperCase();
   if (["PUSH", "PULL", "LEG", "RECOVERY"].includes(candidate)) {
     return candidate;
   }
@@ -1838,7 +1864,8 @@ function normalizeRoutineSplit(split) {
 
 function buildLocalRoutineRecommendation(latest, recentWorkouts) {
   const recommendedSplit = chooseRecommendedSplit(latest.date, recentWorkouts);
-  const exercises = ROUTINE_TEMPLATES[recommendedSplit] || ROUTINE_TEMPLATES.PUSH;
+  const exercises =
+    ROUTINE_TEMPLATES[recommendedSplit] || ROUTINE_TEMPLATES.PUSH;
   const recentMainSplits = recentWorkouts
     .map((workout) => workout.mainSplit)
     .filter(Boolean);
@@ -1883,7 +1910,11 @@ function chooseRecommendedSplit(anchorDateString, recentWorkouts) {
     return candidate;
   }
 
-  return preferredOrder.find((split) => split !== recentMainSplits[recentMainSplits.length - 1]) || "PUSH";
+  return (
+    preferredOrder.find(
+      (split) => split !== recentMainSplits[recentMainSplits.length - 1],
+    ) || "PUSH"
+  );
 }
 
 function getRoutineSplitLabel(split) {
@@ -1960,6 +1991,9 @@ function toDateString(date) {
 
 function setDateInputValue(dateString = getTodayLocalDate()) {
   dateInput.value = dateString;
+  if (datePickerProxy) {
+    datePickerProxy.value = isDateString(dateString) ? dateString : "";
+  }
   clearDateInputValidity();
 }
 
@@ -1974,6 +2008,31 @@ function normalizeDateInput() {
   }
 
   setDateInputValue(normalized);
+}
+
+function openDatePicker() {
+  if (!datePickerProxy) {
+    return;
+  }
+
+  const normalized = normalizeDateValue(dateInput.value);
+  datePickerProxy.value = normalized || datePickerProxy.value || getTodayLocalDate();
+
+  if (typeof datePickerProxy.showPicker === "function") {
+    datePickerProxy.showPicker();
+    return;
+  }
+
+  datePickerProxy.focus();
+  datePickerProxy.click();
+}
+
+function syncDateFromPicker() {
+  if (!datePickerProxy || !datePickerProxy.value) {
+    return;
+  }
+
+  setDateInputValue(datePickerProxy.value);
 }
 
 function isDateString(value) {
