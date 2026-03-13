@@ -132,8 +132,72 @@
         </div>
       </section>
 
-      <main class="layout">
-        <section class="panel form-panel">
+            <p id="app-status" class="status-line page-status"></p>
+
+      <section class="panel chart-panel">
+        <div class="panel-head">
+          <h2>변화 그래프</h2>
+        </div>
+
+        <div class="charts">
+          <article
+            class="chart-card"
+            data-metric="weight"
+            role="button"
+            tabindex="-1"
+            aria-disabled="true"
+          >
+            <div class="metric-head">
+              <span class="metric-dot weight"></span>
+              <strong>체중</strong>
+            </div>
+            <div class="chart-stage" data-stage="weight">
+              <canvas id="weight-chart" width="480" height="240"></canvas>
+              <div class="chart-tooltip" data-tooltip-for="weight" hidden></div>
+            </div>
+          </article>
+
+          <article
+            class="chart-card"
+            data-metric="bodyFat"
+            role="button"
+            tabindex="-1"
+            aria-disabled="true"
+          >
+            <div class="metric-head">
+              <span class="metric-dot fat"></span>
+              <strong>체지방률</strong>
+            </div>
+            <div class="chart-stage" data-stage="bodyFat">
+              <canvas id="bodyfat-chart" width="480" height="240"></canvas>
+              <div
+                class="chart-tooltip"
+                data-tooltip-for="bodyFat"
+                hidden
+              ></div>
+            </div>
+          </article>
+
+          <article
+            class="chart-card"
+            data-metric="muscle"
+            role="button"
+            tabindex="-1"
+            aria-disabled="true"
+          >
+            <div class="metric-head">
+              <span class="metric-dot muscle"></span>
+              <strong>골격근량</strong>
+            </div>
+            <div class="chart-stage" data-stage="muscle">
+              <canvas id="muscle-chart" width="480" height="240"></canvas>
+              <div class="chart-tooltip" data-tooltip-for="muscle" hidden></div>
+            </div>
+          </article>
+        </div>
+      </section>
+      <section class="record-grid">
+<section class="panel form-panel">
           <div class="panel-head">
             <h2>기록 입력</h2>
           </div>
@@ -212,187 +276,7 @@
             </div>
           </form>
         </section>
-
-        <section class="panel routine-panel">
-          <div class="panel-head panel-head-inline">
-            <div>
-              <h2>루틴 입력</h2>
-            </div>
-            <strong id="routine-date-label" class="routine-date-label"
-              >-</strong
-            >
-          </div>
-
-          <div id="routine-builder" class="routine-builder">
-            <div
-              class="routine-split-toggle"
-              role="tablist"
-              aria-label="루틴 분할 선택"
-            >
-              <button
-                type="button"
-                class="routine-split-button"
-                data-routine-split="PULL"
-                aria-pressed="false"
-              >
-                PULL
-              </button>
-              <button
-                type="button"
-                class="routine-split-button"
-                data-routine-split="PUSH"
-                aria-pressed="false"
-              >
-                PUSH
-              </button>
-              <button
-                type="button"
-                class="routine-split-button"
-                data-routine-split="LEG"
-                aria-pressed="false"
-              >
-                LEG
-              </button>
-            </div>
-
-            <label class="routine-slider-field">
-              <span class="routine-slider-label">
-                실패지점 수행 세트 비율
-                <strong id="failure-set-ratio-value">70%</strong>
-              </span>
-              <input
-                type="range"
-                id="failure-set-ratio"
-                min="0"
-                max="100"
-                step="5"
-                value="70"
-              />
-            </label>
-
-            <label class="routine-search-field">
-              <span>운동 검색</span>
-              <input
-                type="search"
-                id="routine-search"
-                placeholder="운동 종목 검색"
-                autocomplete="off"
-              />
-            </label>
-
-            <div
-              id="routine-search-results"
-              class="routine-search-results"
-            ></div>
-
-            <div id="routine-items" class="routine-items"></div>
-          </div>
-
-          <div id="routine-summary" class="routine-summary" hidden></div>
-
-          <div class="form-actions">
-            <button
-              type="button"
-              id="edit-routine"
-              class="secondary"
-              hidden
-            >
-              루틴 수정
-            </button>
-            <button type="button" id="save-routine" class="primary">
-              루틴 저장
-            </button>
-            <button type="button" id="delete-routine" class="ghost">
-              루틴 삭제
-            </button>
-          </div>
-
-          <p id="routine-editor-status" class="status-line"></p>
-        </section>
-
-        <section class="panel ai-panel">
-          <div class="panel-head panel-head-inline">
-            <div>
-              <h2>루틴 보기</h2>
-            </div>
-            <strong id="routine-display-date" class="routine-date-label">-</strong>
-          </div>
-
-          <div class="analysis-box">
-            <p class="section-label">저장된 루틴</p>
-            <div id="routine-display" class="analysis-output">
-              선택한 날짜에 저장된 루틴이 없습니다.
-            </div>
-          </div>
-
-          <p id="app-status" class="status-line"></p>
-        </section>
-      </main>
-
-      <section class="panel chart-panel">
-        <div class="panel-head">
-          <h2>변화 그래프</h2>
-        </div>
-
-        <div class="charts">
-          <article
-            class="chart-card"
-            data-metric="weight"
-            role="button"
-            tabindex="-1"
-            aria-disabled="true"
-          >
-            <div class="metric-head">
-              <span class="metric-dot weight"></span>
-              <strong>체중</strong>
-            </div>
-            <div class="chart-stage" data-stage="weight">
-              <canvas id="weight-chart" width="480" height="240"></canvas>
-              <div class="chart-tooltip" data-tooltip-for="weight" hidden></div>
-            </div>
-          </article>
-
-          <article
-            class="chart-card"
-            data-metric="bodyFat"
-            role="button"
-            tabindex="-1"
-            aria-disabled="true"
-          >
-            <div class="metric-head">
-              <span class="metric-dot fat"></span>
-              <strong>체지방률</strong>
-            </div>
-            <div class="chart-stage" data-stage="bodyFat">
-              <canvas id="bodyfat-chart" width="480" height="240"></canvas>
-              <div
-                class="chart-tooltip"
-                data-tooltip-for="bodyFat"
-                hidden
-              ></div>
-            </div>
-          </article>
-
-          <article
-            class="chart-card"
-            data-metric="muscle"
-            role="button"
-            tabindex="-1"
-            aria-disabled="true"
-          >
-            <div class="metric-head">
-              <span class="metric-dot muscle"></span>
-              <strong>골격근량</strong>
-            </div>
-            <div class="chart-stage" data-stage="muscle">
-              <canvas id="muscle-chart" width="480" height="240"></canvas>
-              <div class="chart-tooltip" data-tooltip-for="muscle" hidden></div>
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <section class="panel history-panel">
+<section class="panel history-panel">
         <div class="panel-head">
           <h2>기록 내역</h2>
         </div>
@@ -415,6 +299,7 @@
             </tbody>
           </table>
         </div>
+      </section>
       </section>
 
       <section class="panel profile-panel">
