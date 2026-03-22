@@ -1914,15 +1914,91 @@ function drawLineSeries(context, points, smooth = false) {
     return;
   }
 
+  const segmentWidths = [];
+  const segmentSlopes = [];
+  const tangents = new Array(points.length).fill(0);
+
+  for (let index = 0; index < points.length - 1; index += 1) {
+    const dx = points[index + 1].x - points[index].x;
+    if (dx <= 0) {
+      context.lineTo(points[index + 1].x, points[index + 1].y);
+      continue;
+    }
+
+    segmentWidths[index] = dx;
+    segmentSlopes[index] = (points[index + 1].y - points[index].y) / dx;
+  }
+
+  tangents[0] = segmentSlopes[0];
+  tangents[points.length - 1] = segmentSlopes[segmentSlopes.length - 1];
+
+  for (let index = 1; index < points.length - 1; index += 1) {
+    const previousSlope = segmentSlopes[index - 1];
+    const nextSlope = segmentSlopes[index];
+
+    if (
+      previousSlope === 0 ||
+      nextSlope === 0 ||
+      Math.sign(previousSlope) !== Math.sign(nextSlope)
+    ) {
+      tangents[index] = 0;
+      continue;
+    }
+
+    const previousWidth = segmentWidths[index - 1];
+    const nextWidth = segmentWidths[index];
+    const weightA = 2 * nextWidth + previousWidth;
+    const weightB = nextWidth + 2 * previousWidth;
+
+    tangents[index] =
+      (weightA + weightB) /
+      (weightA / previousSlope + weightB / nextSlope);
+  }
+
+  for (let index = 0; index < segmentSlopes.length; index += 1) {
+    const slope = segmentSlopes[index];
+    if (slope === 0) {
+      tangents[index] = 0;
+      tangents[index + 1] = 0;
+      continue;
+    }
+
+    const tangentRatioA = tangents[index] / slope;
+    const tangentRatioB = tangents[index + 1] / slope;
+    const ratioLength = Math.hypot(tangentRatioA, tangentRatioB);
+
+    if (ratioLength > 3) {
+      const scale = 3 / ratioLength;
+      tangents[index] = tangentRatioA * scale * slope;
+      tangents[index + 1] = tangentRatioB * scale * slope;
+    }
+  }
+
+  const averageWidth =
+    segmentWidths.reduce((sum, width) => sum + width, 0) /
+      segmentWidths.length || 1;
+
+  for (let index = 0; index < tangents.length; index += 1) {
+    const adjacentWidths = [segmentWidths[index - 1], segmentWidths[index]]
+      .filter((width) => Number.isFinite(width));
+    if (adjacentWidths.length === 0) {
+      continue;
+    }
+
+    const localWidth = Math.min(...adjacentWidths);
+    const widthFactor = clamp(localWidth / averageWidth, 0.55, 1);
+    const smoothingFactor = 0.72 + widthFactor * 0.28;
+    tangents[index] *= smoothingFactor;
+  }
+
   for (let index = 0; index < points.length - 1; index += 1) {
     const current = points[index];
     const next = points[index + 1];
-    const previous = points[index - 1] || current;
-    const afterNext = points[index + 2] || next;
-    const controlPoint1X = current.x + (next.x - previous.x) / 6;
-    const controlPoint1Y = current.y + (next.y - previous.y) / 6;
-    const controlPoint2X = next.x - (afterNext.x - current.x) / 6;
-    const controlPoint2Y = next.y - (afterNext.y - current.y) / 6;
+    const dx = next.x - current.x;
+    const controlPoint1X = current.x + dx / 3;
+    const controlPoint1Y = current.y + (tangents[index] * dx) / 3;
+    const controlPoint2X = next.x - dx / 3;
+    const controlPoint2Y = next.y - (tangents[index + 1] * dx) / 3;
 
     context.bezierCurveTo(
       controlPoint1X,
