@@ -1707,6 +1707,7 @@ function renderCharts() {
     hideTooltip(elements.tooltip);
     chartStates[metricKey] = drawMetricChart(elements.canvas, metricKey, {
       curve: "smooth",
+      showPoints: false,
       ratio: 0.52,
       minHeight: 240,
       minWidth: 280,
@@ -1769,6 +1770,7 @@ function drawMetricChart(canvas, metricKey, options = {}) {
   const panelStrong = getComputedStyle(document.documentElement)
     .getPropertyValue("--panel-strong")
     .trim();
+  const showPoints = options.showPoints ?? true;
 
   drawChartGrid(context, width, height, padding);
 
@@ -1787,13 +1789,17 @@ function drawMetricChart(canvas, metricKey, options = {}) {
   const lower = Math.max(0, min - safeRange * 0.2);
   const upper = max + safeRange * 0.2;
   const plotWidth = width - padding.left - padding.right;
-  const stepX = data.length === 1 ? 0 : plotWidth / (data.length - 1);
+  const timestamps = data.map((item) => parseDateString(item.date).getTime());
+  const minTimestamp = Math.min(...timestamps);
+  const maxTimestamp = Math.max(...timestamps);
+  const timeRange = maxTimestamp - minTimestamp;
 
   const points = data.map((item, index) => {
     const x =
-      data.length === 1
+      timeRange === 0
         ? padding.left + plotWidth / 2
-        : padding.left + stepX * index;
+        : padding.left +
+          ((timestamps[index] - minTimestamp) / timeRange) * plotWidth;
     const y = mapValue(
       item[metricKey],
       lower,
@@ -1819,15 +1825,17 @@ function drawMetricChart(canvas, metricKey, options = {}) {
     context.stroke();
   }
 
-  points.forEach((point) => {
-    context.fillStyle = panelStrong;
-    context.strokeStyle = metricConfig[metricKey].color;
-    context.lineWidth = 2;
-    context.beginPath();
-    context.arc(point.x, point.y, 4.8, 0, Math.PI * 2);
-    context.fill();
-    context.stroke();
-  });
+  if (showPoints) {
+    points.forEach((point) => {
+      context.fillStyle = panelStrong;
+      context.strokeStyle = metricConfig[metricKey].color;
+      context.lineWidth = 2;
+      context.beginPath();
+      context.arc(point.x, point.y, 4.8, 0, Math.PI * 2);
+      context.fill();
+      context.stroke();
+    });
+  }
 
   context.fillStyle = textColor;
   context.font = '12px "SUIT", sans-serif';
