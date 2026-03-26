@@ -1706,7 +1706,7 @@ function renderCharts() {
   Object.entries(chartElements).forEach(([metricKey, elements]) => {
     hideTooltip(elements.tooltip);
     chartStates[metricKey] = drawMetricChart(elements.canvas, metricKey, {
-      curve: "smooth",
+      curve: "linear",
       showPoints: false,
       ratio: 0.52,
       minHeight: 240,
@@ -1820,8 +1820,9 @@ function drawMetricChart(canvas, metricKey, options = {}) {
     context.strokeStyle = metricConfig[metricKey].color;
     context.lineWidth = 3;
     context.lineCap = "round";
-    context.lineJoin = "round";
-    drawLineSeries(context, points, options.curve === "smooth");
+    const isSmoothCurve = options.curve === "smooth";
+    context.lineJoin = isSmoothCurve ? "round" : "miter";
+    drawLineSeries(context, points, isSmoothCurve);
     context.stroke();
   }
 
