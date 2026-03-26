@@ -1821,7 +1821,7 @@ function drawMetricChart(canvas, metricKey, options = {}) {
     context.lineWidth = 3;
     context.lineCap = "round";
     const isSmoothCurve = options.curve === "smooth";
-    context.lineJoin = isSmoothCurve ? "round" : "miter";
+    context.lineJoin = "round";
     drawLineSeries(context, points, isSmoothCurve);
     context.stroke();
   }
