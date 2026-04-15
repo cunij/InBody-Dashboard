@@ -4,30 +4,23 @@
 
 Render deploys from a Git repository. Push this project to GitHub first.
 
-## 2. Create the database
-
-1. Open Render.
-2. Create a new `Postgres` database.
-3. Open the database details page.
-4. Copy the `Internal Database URL`.
-
-## 3. Create the web service
+## 2. Create the web service
 
 1. Create a new `Web Service`.
 2. Connect the GitHub repository for this project.
 3. Render should detect `render.yaml` automatically.
 
-## 4. Set environment variables
+## 3. Set environment variables
 
 Add these values in Render:
 
-- `DATABASE_URL=<your Render Postgres internal database URL>`
+- `DATABASE_URL=<your Neon connection string>`
 - `OPENAI_API_KEY=sk-...`
 - `OPENAI_MODEL=gpt-5`
 
 Do not upload a local `.env` file to Render.
 
-## 5. Deploy
+## 4. Deploy
 
 Render will run:
 
@@ -39,6 +32,12 @@ The app exposes:
 - Main app: `/`
 - Health check: `/health`
 
-## 6. Use the public URL
+## 5. Use the public URL
 
 After deployment, open the Render service URL from any device.
+
+## Notes
+
+- DB is hosted on Neon, app server is hosted on Render
+- If you already restored data into Neon, no extra DB migration is needed during deploy
+- After the first deploy, Render gives you a public `https://...onrender.com` URL

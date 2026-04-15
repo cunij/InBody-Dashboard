@@ -1,0 +1,236 @@
+{
+  "records": [
+    {
+      "id": "b33e46e9-b258-45c3-a98b-b45f28407a5d",
+      "date": "2025-08-03",
+      "weight": 75.2,
+      "bodyFat": 10.5,
+      "muscle": 38.5,
+      "createdAt": 1773370707835
+    },
+    {
+      "id": "04cebc34-bf30-43cb-bb45-26a03b5a1f9a",
+      "date": "2025-09-30",
+      "weight": 75.2,
+      "bodyFat": 10.5,
+      "muscle": 38.5,
+      "createdAt": 1773370793592
+    },
+    {
+      "id": "f003fe20-ebf8-468b-a826-99f584b902e5",
+      "date": "2025-10-01",
+      "weight": 74.6,
+      "bodyFat": 9.2,
+      "muscle": 38.9,
+      "createdAt": 1773370816349
+    },
+    {
+      "id": "8e1722c2-0b79-43f8-aaa1-2860d9d2fa97",
+      "date": "2025-12-01",
+      "weight": 78.2,
+      "bodyFat": 10,
+      "muscle": 40.6,
+      "createdAt": 1773370835984
+    },
+    {
+      "id": "3f32f165-e234-4aa7-93c7-28ce44c30aa3",
+      "date": "2026-03-13",
+      "weight": 77.2,
+      "bodyFat": 9.2,
+      "muscle": 40.4,
+      "createdAt": 1773404920722
+    },
+    {
+      "id": "68efbcf0-6eb9-4f5f-ab18-b7dbbe795482",
+      "date": "2025-02-17",
+      "weight": 66.3,
+      "bodyFat": 10.1,
+      "muscle": 33.8,
+      "createdAt": 1774154701917
+    },
+    {
+      "id": "3098dbe9-3e99-4ab2-8313-0799c9ad4263",
+      "date": "2025-03-17",
+      "weight": 69.1,
+      "bodyFat": 11.5,
+      "muscle": 34.9,
+      "createdAt": 1774154730831
+    },
+    {
+      "id": "bab82853-b2e6-4dcb-8de6-7a5b4a17bd5e",
+      "date": "2025-04-03",
+      "weight": 70,
+      "bodyFat": 10.5,
+      "muscle": 35.7,
+      "createdAt": 1774154751062
+    },
+    {
+      "id": "0e93ce24-3c53-4184-a152-865f40f040ba",
+      "date": "2025-04-16",
+      "weight": 70,
+      "bodyFat": 11.5,
+      "muscle": 35.3,
+      "createdAt": 1774154812322
+    },
+    {
+      "id": "b4bb96e0-0b8e-4d3f-a776-b98e2fe0a1c1",
+      "date": "2025-04-30",
+      "weight": 71.1,
+      "bodyFat": 8.4,
+      "muscle": 37.3,
+      "createdAt": 1774154833359
+    },
+    {
+      "id": "101b10b6-d003-43a5-8ddd-b28f25108fd0",
+      "date": "2025-09-05",
+      "weight": 75.2,
+      "bodyFat": 10.5,
+      "muscle": 38.5,
+      "createdAt": 1774154866802
+    },
+    {
+      "id": "6e574782-bf37-4f09-ae89-4dddb63f0c94",
+      "date": "2026-03-24",
+      "weight": 78.8,
+      "bodyFat": 9.1,
+      "muscle": 41.3,
+      "createdAt": 1774302414752
+    }
+  ],
+  "workouts": {
+    "2026-03-11": {
+      "mainSplit": "PUSH",
+      "cardio": false
+    },
+    "2026-03-05": {
+      "mainSplit": "LEG",
+      "cardio": false
+    },
+    "2026-03-06": {
+      "mainSplit": "PULL",
+      "cardio": false
+    },
+    "2026-03-07": {
+      "mainSplit": "PUSH",
+      "cardio": false
+    },
+    "2026-03-09": {
+      "mainSplit": "LEG",
+      "cardio": false
+    },
+    "2026-03-10": {
+      "mainSplit": "PULL",
+      "cardio": false
+    },
+    "2026-03-01": {
+      "mainSplit": "PULL",
+      "cardio": false
+    },
+    "2026-02-21": {
+      "mainSplit": "PULL",
+      "cardio": false
+    },
+    "2026-02-22": {
+      "mainSplit": "LEG",
+      "cardio": false
+    },
+    "2026-02-23": {
+      "mainSplit": "PUSH",
+      "cardio": false
+    },
+    "2026-02-25": {
+      "mainSplit": "LEG",
+      "cardio": false
+    },
+    "2026-02-26": {
+      "mainSplit": "PULL",
+      "cardio": false
+    },
+    "2026-02-27": {
+      "mainSplit": "PUSH",
+      "cardio": false
+    },
+    "2026-03-13": {
+      "mainSplit": null,
+      "cardio": true
+    },
+    "2026-03-15": {
+      "mainSplit": "PUSH",
+      "cardio": false
+    },
+    "2026-03-16": {
+      "mainSplit": "LEG",
+      "cardio": false
+    },
+    "2026-03-17": {
+      "mainSplit": "PULL",
+      "cardio": false
+    },
+    "2026-03-19": {
+      "mainSplit": "PUSH",
+      "cardio": false
+    },
+    "2026-03-20": {
+      "mainSplit": "PULL",
+      "cardio": false
+    },
+    "2026-03-21": {
+      "mainSplit": "LEG",
+      "cardio": false
+    },
+    "2026-03-23": {
+      "mainSplit": "PUSH",
+      "cardio": false
+    },
+    "2026-03-24": {
+      "mainSplit": "PULL",
+      "cardio": false
+    },
+    "2026-03-25": {
+      "mainSplit": "LEG",
+      "cardio": false
+    },
+    "2026-03-28": {
+      "mainSplit": "PULL",
+      "cardio": false
+    },
+    "2026-03-29": {
+      "mainSplit": "PUSH",
+      "cardio": false
+    },
+    "2026-03-30": {
+      "mainSplit": "LEG",
+      "cardio": false
+    },
+    "2026-04-01": {
+      "mainSplit": "PUSH",
+      "cardio": false
+    },
+    "2026-04-02": {
+      "mainSplit": "LEG",
+      "cardio": false
+    },
+    "2026-04-04": {
+      "mainSplit": "PULL",
+      "cardio": false
+    },
+    "2026-04-07": {
+      "mainSplit": "LEG",
+      "cardio": false
+    },
+    "2026-04-05": {
+      "mainSplit": "PUSH",
+      "cardio": false
+    },
+    "2026-03-02": {
+      "mainSplit": "PUSH",
+      "cardio": false
+    },
+    "2026-04-08": {
+      "mainSplit": "PULL",
+      "cardio": false
+    }
+  },
+  "dailyRoutines": {},
+  "profile": ""
+}
