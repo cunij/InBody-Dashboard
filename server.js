@@ -720,7 +720,7 @@ function loadEnv(filePath) {
 
     const key = trimmed.slice(0, separatorIndex).trim();
     const value = trimmed.slice(separatorIndex + 1).trim().replace(/^"(.*)"$/u, "$1");
-    if (key) {
+    if (key && process.env[key] === undefined) {
       process.env[key] = value;
     }
   }
