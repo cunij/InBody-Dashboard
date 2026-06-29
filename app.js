@@ -189,9 +189,9 @@ const chartElements = {
 };
 
 const metricConfig = {
-  weight: { label: "체중", unit: "kg", color: "#f59e0b" },
-  bodyFat: { label: "체지방률", unit: "%", color: "#ef4444" },
-  muscle: { label: "골격근량", unit: "kg", color: "#10b981" },
+  weight: { label: "체중", unit: "kg", color: "#f5a524" },
+  bodyFat: { label: "체지방률", unit: "%", color: "#f05275" },
+  muscle: { label: "골격근량", unit: "kg", color: "#19b98a" },
 };
 
 const ROUTINE_TEMPLATES = {
@@ -1026,7 +1026,43 @@ function renderWorkoutCalendar() {
     button.addEventListener("click", () =>
       selectWorkoutDate(button.dataset.date),
     );
+    if (button.classList.contains("is-workout")) {
+      button.addEventListener("pointermove", handleWorkoutDayPointerMove);
+      button.addEventListener("pointerleave", resetWorkoutDayDepth);
+      button.addEventListener("pointercancel", resetWorkoutDayDepth);
+      button.addEventListener("blur", resetWorkoutDayDepth);
+    }
   });
+}
+
+function handleWorkoutDayPointerMove(event) {
+  if (reducedMotionMedia.matches) {
+    return;
+  }
+
+  const button = event.currentTarget;
+  const rect = button.getBoundingClientRect();
+  const relativeX = (event.clientX - rect.left) / rect.width - 0.5;
+  const relativeY = (event.clientY - rect.top) / rect.height - 0.5;
+  const pullX = clamp(relativeX * 6, -3, 3);
+  const pullY = clamp(relativeY * 6, -3, 3);
+  const tiltX = clamp(-relativeY * 7, -3.5, 3.5);
+  const tiltY = clamp(relativeX * 7, -3.5, 3.5);
+
+  button.classList.add("is-following");
+  button.style.setProperty("--day-pull-x", `${pullX.toFixed(2)}px`);
+  button.style.setProperty("--day-pull-y", `${pullY.toFixed(2)}px`);
+  button.style.setProperty("--day-tilt-x", `${tiltX.toFixed(2)}deg`);
+  button.style.setProperty("--day-tilt-y", `${tiltY.toFixed(2)}deg`);
+}
+
+function resetWorkoutDayDepth(event) {
+  const button = event.currentTarget;
+  button.classList.remove("is-following");
+  button.style.removeProperty("--day-pull-x");
+  button.style.removeProperty("--day-pull-y");
+  button.style.removeProperty("--day-tilt-x");
+  button.style.removeProperty("--day-tilt-y");
 }
 
 function renderWorkoutEditor() {
@@ -1047,7 +1083,7 @@ function renderWorkoutEditorState() {
   }
 
   if (selected.mainSplit || selected.cardio) {
-    workoutEditorStatus.textContent = `${formatDate(selectedWorkoutDate)}에 ${getWorkoutDisplayLabel(selected)} 운동을 저장할 수 있습니다.`;
+    workoutEditorStatus.textContent = "";
     return;
   }
 
@@ -1838,8 +1874,8 @@ function renderCharts() {
   Object.entries(chartElements).forEach(([metricKey, elements]) => {
     hideTooltip(elements.tooltip);
     chartStates[metricKey] = drawMetricChart(elements.canvas, metricKey, {
-      curve: "linear",
-      showPoints: false,
+      curve: "smooth",
+      showPoints: records.length <= 8,
       ratio: 0.52,
       minHeight: 240,
       minWidth: 280,
@@ -1949,13 +1985,33 @@ function drawMetricChart(canvas, metricKey, options = {}) {
   });
 
   if (points.length > 1) {
-    context.strokeStyle = metricConfig[metricKey].color;
+    const isSmoothCurve = options.curve === "smooth";
+    const seriesColor = metricConfig[metricKey].color;
+    const baseline = height - padding.bottom;
+    const fillGradient = context.createLinearGradient(0, padding.top, 0, baseline);
+    fillGradient.addColorStop(0, getAlphaColor(seriesColor, 0.24));
+    fillGradient.addColorStop(0.62, getAlphaColor(seriesColor, 0.08));
+    fillGradient.addColorStop(1, getAlphaColor(seriesColor, 0));
+
+    context.save();
+    context.fillStyle = fillGradient;
+    drawLineSeries(context, points, isSmoothCurve);
+    context.lineTo(points[points.length - 1].x, baseline);
+    context.lineTo(points[0].x, baseline);
+    context.closePath();
+    context.fill();
+    context.restore();
+
+    context.save();
+    context.strokeStyle = seriesColor;
     context.lineWidth = 3;
     context.lineCap = "round";
-    const isSmoothCurve = options.curve === "smooth";
     context.lineJoin = "round";
+    context.shadowColor = getAlphaColor(seriesColor, 0.28);
+    context.shadowBlur = 14;
     drawLineSeries(context, points, isSmoothCurve);
     context.stroke();
+    context.restore();
   }
 
   if (showPoints) {
@@ -2029,6 +2085,18 @@ function drawChartGrid(context, width, height, padding) {
     context.lineTo(width - padding.right, y);
     context.stroke();
   }
+}
+
+function getAlphaColor(hexColor, alpha) {
+  const hex = String(hexColor || "").replace("#", "");
+  if (hex.length !== 6) {
+    return `rgba(47, 125, 246, ${alpha})`;
+  }
+
+  const red = Number.parseInt(hex.slice(0, 2), 16);
+  const green = Number.parseInt(hex.slice(2, 4), 16);
+  const blue = Number.parseInt(hex.slice(4, 6), 16);
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 }
 
 function drawLineSeries(context, points, smooth = false) {
@@ -2279,7 +2347,8 @@ function renderActiveModalChart() {
   const height = clamp(preferredHeight, 240, maxHeight);
 
   modalChartState = drawMetricChart(chartModalCanvas, activeModalMetric, {
-    curve: "linear",
+    curve: "smooth",
+    showPoints: true,
     height,
     minHeight: 240,
     minWidth: 0,

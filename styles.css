@@ -1,43 +1,63 @@
 :root {
-  --bg: #f4f5f7;
-  --bg-layer: rgba(255, 255, 255, 0.72);
-  --panel: rgba(255, 255, 255, 0.82);
-  --panel-strong: #ffffff;
-  --line: rgba(15, 23, 42, 0.1);
-  --text: #111827;
-  --muted: #6b7280;
-  --accent: #2563eb;
-  --accent-strong: #1d4ed8;
-  --accent-soft: rgba(37, 99, 235, 0.12);
-  --weight: #f59e0b;
-  --fat: #ef4444;
-  --muscle: #10b981;
-  --pull: #2563eb;
-  --push: #f97316;
-  --leg: #10b981;
-  --cardio: #06b6d4;
-  --shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+  --bg: #eef5fb;
+  --bg-deep: #dbe8f4;
+  --bg-layer: rgba(255, 255, 255, 0.48);
+  --panel: rgba(255, 255, 255, 0.46);
+  --panel-strong: rgba(255, 255, 255, 0.72);
+  --field: rgba(255, 255, 255, 0.56);
+  --canvas: rgba(255, 255, 255, 0.36);
+  --line: rgba(255, 255, 255, 0.54);
+  --line-strong: rgba(255, 255, 255, 0.78);
+  --calendar-cell-line: rgba(45, 65, 92, 0.12);
+  --calendar-cell-line-strong: rgba(47, 125, 246, 0.28);
+  --edge: rgba(36, 54, 78, 0.12);
+  --text: #142033;
+  --muted: #667386;
+  --accent: #2f7df6;
+  --accent-strong: #0f55d9;
+  --accent-soft: rgba(47, 125, 246, 0.16);
+  --weight: #f5a524;
+  --fat: #f05275;
+  --muscle: #19b98a;
+  --pull: #5b8cff;
+  --push: #ff6b7a;
+  --leg: #2fd99a;
+  --cardio: #22c7e6;
+  --glass-highlight: rgba(255, 255, 255, 0.76);
+  --glass-glow: rgba(126, 190, 255, 0.22);
+  --shadow: 0 30px 80px rgba(54, 78, 109, 0.18);
+  --shadow-soft: 0 16px 42px rgba(54, 78, 109, 0.12);
 }
 
 html[data-theme="dark"] {
-  --bg: #09090b;
-  --bg-layer: rgba(24, 24, 27, 0.82);
-  --panel: rgba(24, 24, 27, 0.88);
-  --panel-strong: #111114;
-  --line: rgba(255, 255, 255, 0.08);
-  --text: #f4f4f5;
-  --muted: #a1a1aa;
-  --accent: #60a5fa;
-  --accent-strong: #3b82f6;
-  --accent-soft: rgba(96, 165, 250, 0.18);
-  --weight: #fbbf24;
-  --fat: #fb7185;
-  --muscle: #34d399;
-  --pull: #60a5fa;
-  --push: #fb923c;
-  --leg: #34d399;
-  --cardio: #22d3ee;
-  --shadow: 0 26px 70px rgba(0, 0, 0, 0.34);
+  --bg: #0f1520;
+  --bg-deep: #070b12;
+  --bg-layer: rgba(21, 30, 45, 0.48);
+  --panel: rgba(20, 30, 45, 0.5);
+  --panel-strong: rgba(25, 36, 54, 0.72);
+  --field: rgba(21, 31, 47, 0.62);
+  --canvas: rgba(12, 18, 29, 0.5);
+  --line: rgba(255, 255, 255, 0.16);
+  --line-strong: rgba(255, 255, 255, 0.28);
+  --calendar-cell-line: rgba(255, 255, 255, 0.16);
+  --calendar-cell-line-strong: rgba(123, 183, 255, 0.38);
+  --edge: rgba(0, 0, 0, 0.28);
+  --text: #f7fbff;
+  --muted: #aab7c7;
+  --accent: #7bb7ff;
+  --accent-strong: #4d8df8;
+  --accent-soft: rgba(123, 183, 255, 0.18);
+  --weight: #ffd166;
+  --fat: #ff7096;
+  --muscle: #5de2b1;
+  --pull: #7aa2ff;
+  --push: #ff7d90;
+  --leg: #4be3ab;
+  --cardio: #45d4ef;
+  --glass-highlight: rgba(255, 255, 255, 0.11);
+  --glass-glow: rgba(123, 183, 255, 0.2);
+  --shadow: 0 34px 90px rgba(0, 0, 0, 0.42);
+  --shadow-soft: 0 18px 48px rgba(0, 0, 0, 0.28);
 }
 
 * {
@@ -49,14 +69,44 @@ html {
 }
 
 body {
+  position: relative;
   margin: 0;
   min-height: 100vh;
   font-family: "SUIT", sans-serif;
   color: var(--text);
   background:
-    radial-gradient(circle at top left, rgba(37, 99, 235, 0.16), transparent 26%),
-    radial-gradient(circle at top right, rgba(16, 185, 129, 0.12), transparent 22%),
-    linear-gradient(180deg, var(--bg) 0%, color-mix(in srgb, var(--bg) 86%, black 14%) 100%);
+    linear-gradient(118deg, rgba(181, 222, 255, 0.72) 0%, rgba(255, 240, 247, 0.52) 34%, rgba(225, 251, 244, 0.58) 70%, rgba(245, 247, 255, 0.72) 100%),
+    conic-gradient(from 160deg at 52% 18%, rgba(255, 255, 255, 0.9), rgba(181, 222, 255, 0.54), rgba(255, 221, 235, 0.48), rgba(221, 248, 239, 0.56), rgba(255, 255, 255, 0.9)),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
+  background-attachment: fixed;
+}
+
+html[data-theme="dark"] body {
+  background:
+    linear-gradient(120deg, rgba(41, 84, 140, 0.46) 0%, rgba(78, 46, 82, 0.38) 36%, rgba(32, 94, 82, 0.34) 72%, rgba(14, 19, 30, 0.88) 100%),
+    conic-gradient(from 150deg at 48% 12%, rgba(255, 255, 255, 0.08), rgba(72, 118, 178, 0.36), rgba(107, 64, 102, 0.32), rgba(44, 119, 101, 0.28), rgba(255, 255, 255, 0.07)),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
+  background-attachment: fixed;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.3), transparent 18%, rgba(255, 255, 255, 0.2) 42%, transparent 66%, rgba(255, 255, 255, 0.22)),
+    repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.14) 0 1px, transparent 1px 12px);
+  mix-blend-mode: soft-light;
+  opacity: 0.58;
+}
+
+html[data-theme="dark"] body::before {
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.12), transparent 20%, rgba(255, 255, 255, 0.08) 44%, transparent 68%, rgba(255, 255, 255, 0.1)),
+    repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.08) 0 1px, transparent 1px 12px);
+  opacity: 0.36;
 }
 
 body.modal-open {
@@ -73,7 +123,7 @@ textarea {
 .page-shell {
   width: min(1180px, calc(100% - 32px));
   margin: 0 auto;
-  padding: 28px 0 48px;
+  padding: 30px 0 52px;
   perspective: 1600px;
 }
 
@@ -87,10 +137,16 @@ textarea {
 
 .topbar h1 {
   margin: 0;
-  font-size: clamp(2.6rem, 8vw, 5.4rem);
-  line-height: 0.95;
-  letter-spacing: -0.05em;
+  font-size: 5rem;
+  line-height: 0.98;
+  letter-spacing: 0;
   font-weight: 800;
+  color: transparent;
+  background:
+    linear-gradient(100deg, var(--text), color-mix(in srgb, var(--accent) 52%, var(--text) 48%) 48%, color-mix(in srgb, var(--muscle) 44%, var(--text) 56%));
+  -webkit-background-clip: text;
+  background-clip: text;
+  text-shadow: 0 18px 52px rgba(77, 111, 145, 0.16);
 }
 
 .hero-stack {
@@ -109,7 +165,7 @@ textarea {
 
 .hero-stack.is-scroll-scene .hero-title {
   position: sticky;
-  top: clamp(18px, 3vw, 28px);
+  top: 24px;
   z-index: 1;
   transform-origin: top left;
   transform: translate3d(0, var(--hero-title-shift), 0);
@@ -124,26 +180,48 @@ textarea {
 
 .theme-toggle {
   position: relative;
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-strong);
   border-radius: 999px;
   padding: 11px 16px;
-  background: var(--bg-layer);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.5), transparent 44%),
+    var(--bg-layer);
   color: var(--text);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-soft);
+  -webkit-backdrop-filter: blur(22px) saturate(1.55);
+  backdrop-filter: blur(22px) saturate(1.55);
   transform-style: preserve-3d;
   transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
 }
 
 .panel {
   position: relative;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 28px;
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(18px);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.5), transparent 34%),
+    linear-gradient(315deg, rgba(255, 255, 255, 0.18), transparent 42%),
+    var(--panel);
+  border: 1px solid var(--line-strong);
+  border-radius: 26px;
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    inset 0 -24px 50px rgba(255, 255, 255, 0.18),
+    var(--shadow);
+  -webkit-backdrop-filter: blur(30px) saturate(1.75);
+  backdrop-filter: blur(30px) saturate(1.75);
   transform-style: preserve-3d;
   transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
   overflow: hidden;
+}
+
+html[data-theme="dark"] .panel {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.14), transparent 32%),
+    linear-gradient(315deg, rgba(255, 255, 255, 0.06), transparent 42%),
+    var(--panel);
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    inset 0 -18px 42px rgba(255, 255, 255, 0.06),
+    var(--shadow);
 }
 
 .panel::before,
@@ -158,8 +236,27 @@ button::before {
   inset: 1px 1px auto 1px;
   height: 46%;
   border-radius: inherit;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.54), rgba(255, 255, 255, 0)),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.34), transparent 50%, rgba(255, 255, 255, 0.16));
   pointer-events: none;
+}
+
+.panel::before,
+.summary-stat::before,
+.chart-card::before,
+.calendar-board::before,
+.calendar-editor::before {
+  z-index: 0;
+}
+
+.panel > *,
+.summary-stat > *,
+.chart-card > *,
+.calendar-board > *,
+.calendar-editor > * {
+  position: relative;
+  z-index: 1;
 }
 
 html[data-theme="dark"] .panel::before,
@@ -169,12 +266,23 @@ html[data-theme="dark"] .theme-toggle::before,
 html[data-theme="dark"] .calendar-board::before,
 html[data-theme="dark"] .calendar-editor::before,
 html[data-theme="dark"] button::before {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0));
 }
 
 .panel:hover {
-  transform: translateY(-4px) rotateX(1.4deg);
-  box-shadow: 0 30px 70px rgba(15, 23, 42, 0.14);
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--line-strong) 78%);
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    inset 0 -24px 50px rgba(255, 255, 255, 0.2),
+    0 36px 92px rgba(54, 78, 109, 0.22);
+}
+
+html[data-theme="dark"] .panel:hover {
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    inset 0 -18px 42px rgba(255, 255, 255, 0.07),
+    0 36px 92px rgba(0, 0, 0, 0.42);
 }
 
 .summary-panel {
@@ -198,27 +306,48 @@ html[data-theme="dark"] button::before {
 .summary-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.24), transparent 42%),
+    color-mix(in srgb, var(--panel-strong) 58%, transparent 42%);
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    0 14px 30px rgba(54, 78, 109, 0.1);
+}
+
+html[data-theme="dark"] .summary-grid {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.065), transparent 34%),
+    color-mix(in srgb, var(--panel-strong) 48%, transparent 52%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 14px 30px rgba(0, 0, 0, 0.24);
 }
 
 .summary-stat {
   position: relative;
   padding: 16px 18px;
-  border-radius: 20px;
-  background: var(--panel-strong);
-  border: 1px solid var(--line);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.55),
-    0 14px 28px rgba(15, 23, 42, 0.08);
-  transform: translateZ(18px);
-  transition: transform 180ms ease, box-shadow 180ms ease;
+  background: transparent;
+  border-right: 1px solid color-mix(in srgb, var(--line) 62%, transparent 38%);
+  box-shadow: none;
+  transform: none;
+  transition: background 180ms ease;
+}
+
+.summary-stat::before {
+  content: none;
+}
+
+.summary-stat:last-child {
+  border-right: 0;
 }
 
 .summary-stat:hover {
-  transform: translateZ(24px) translateY(-2px);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.65),
-    0 18px 34px rgba(15, 23, 42, 0.12);
+  transform: none;
+  background: color-mix(in srgb, var(--panel-strong) 24%, transparent 76%);
 }
 
 .summary-stat span {
@@ -230,6 +359,15 @@ html[data-theme="dark"] button::before {
 
 .summary-stat strong {
   font-size: 1.2rem;
+}
+
+html[data-theme="dark"] .summary-panel .section-label,
+html[data-theme="dark"] .summary-stat span {
+  color: rgba(247, 251, 255, 0.76);
+}
+
+html[data-theme="dark"] .summary-stat strong {
+  color: #ffffff;
 }
 
 .layout {
@@ -363,15 +501,39 @@ textarea {
   border: 1px solid var(--line);
   border-radius: 16px;
   padding: 14px 16px;
-  background: var(--panel-strong);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.04)),
+    var(--field);
   color: var(--text);
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    inset 0 -12px 28px rgba(255, 255, 255, 0.1),
+    0 10px 24px rgba(54, 78, 109, 0.08);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  backdrop-filter: blur(18px) saturate(1.5);
+  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
 }
 
 input:focus,
 select:focus,
 textarea:focus {
-  outline: 2px solid var(--accent-soft);
+  outline: 3px solid var(--accent-soft);
   border-color: color-mix(in srgb, var(--accent) 42%, transparent 58%);
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent 80%),
+    0 18px 34px rgba(54, 78, 109, 0.12);
 }
 
 .status-line {
@@ -389,11 +551,13 @@ textarea:focus {
   font-size: 0.92rem;
   font-weight: 700;
   line-height: 1;
+  border: 1px solid var(--line);
+  box-shadow: inset 0 1px 0 var(--glass-highlight);
 }
 
 .status-pill.is-connected {
-  background: rgba(16, 185, 129, 0.14);
-  color: #059669;
+  background: color-mix(in srgb, var(--muscle) 16%, var(--panel-strong) 84%);
+  color: color-mix(in srgb, var(--muscle) 70%, #065f46 30%);
 }
 
 html[data-theme="dark"] .status-pill.is-connected {
@@ -458,10 +622,25 @@ textarea {
   position: relative;
   border: 1px solid var(--line);
   border-radius: 22px;
-  background: var(--panel-strong);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.34), transparent 42%),
+    var(--panel-strong);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.55),
-    0 16px 34px rgba(15, 23, 42, 0.08);
+    inset 0 1px 0 var(--glass-highlight),
+    0 18px 42px rgba(54, 78, 109, 0.12);
+  -webkit-backdrop-filter: blur(24px) saturate(1.55);
+  backdrop-filter: blur(24px) saturate(1.55);
+}
+
+html[data-theme="dark"] .profile-help,
+html[data-theme="dark"] .calendar-board,
+html[data-theme="dark"] .calendar-editor {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.09), transparent 40%),
+    var(--panel-strong);
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    0 18px 42px rgba(0, 0, 0, 0.24);
 }
 
 .profile-help {
@@ -493,13 +672,15 @@ textarea {
 }
 
 .save-state.is-saved {
-  background: rgba(37, 99, 235, 0.12);
+  background: color-mix(in srgb, var(--accent) 13%, var(--panel-strong) 87%);
   color: var(--accent-strong);
+  border: 1px solid var(--line);
 }
 
 .save-state.is-edited {
-  background: rgba(245, 158, 11, 0.14);
+  background: color-mix(in srgb, var(--weight) 16%, var(--panel-strong) 84%);
   color: #b45309;
+  border: 1px solid var(--line);
 }
 
 .form-actions {
@@ -511,41 +692,62 @@ textarea {
 
 button {
   position: relative;
-  border: 0;
+  border: 1px solid transparent;
   border-radius: 999px;
   padding: 12px 18px;
   cursor: pointer;
-  transition: opacity 140ms ease, background 140ms ease, box-shadow 140ms ease;
+  color: var(--text);
+  -webkit-backdrop-filter: blur(18px) saturate(1.45);
+  backdrop-filter: blur(18px) saturate(1.45);
+  transition: opacity 140ms ease, background 140ms ease, box-shadow 140ms ease, transform 140ms ease, border-color 140ms ease;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    0 10px 22px rgba(15, 23, 42, 0.12);
+    inset 0 1px 0 rgba(255, 255, 255, 0.38),
+    0 10px 22px rgba(54, 78, 109, 0.12);
 }
 
 button:hover {
+  transform: translateY(-1px);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.24),
-    0 16px 28px rgba(15, 23, 42, 0.16);
+    inset 0 1px 0 var(--glass-highlight),
+    0 16px 30px rgba(54, 78, 109, 0.18);
 }
 
 button:active {
+  transform: translateY(0);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    0 8px 16px rgba(15, 23, 42, 0.1);
+    0 8px 16px rgba(54, 78, 109, 0.1);
+}
+
+button:focus {
+  outline: none;
+}
+
+button:focus-visible {
+  outline: 3px solid var(--accent-soft);
+  outline-offset: 3px;
 }
 
 .primary {
-  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.36), rgba(255, 255, 255, 0.04)),
+    linear-gradient(135deg, var(--accent), var(--accent-strong));
   color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.46);
 }
 
 .secondary {
-  background: color-mix(in srgb, var(--accent) 14%, var(--panel-strong) 86%);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.04)),
+    color-mix(in srgb, var(--accent) 14%, var(--panel-strong) 86%);
   color: var(--text);
   border: 1px solid var(--line);
 }
 
 .ghost {
-  background: transparent;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.02)),
+    rgba(255, 255, 255, 0.08);
   color: var(--text);
   border: 1px solid var(--line);
 }
@@ -555,7 +757,9 @@ button:active {
   padding: 18px;
   border: 1px solid var(--line);
   border-radius: 22px;
-  background: var(--panel-strong);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.26), transparent 46%),
+    var(--panel-strong);
 }
 
 .analysis-output {
@@ -617,7 +821,9 @@ button:active {
   padding: 16px;
   border: 1px solid var(--line);
   border-radius: 20px;
-  background: color-mix(in srgb, var(--panel-strong) 94%, transparent 6%);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.28), transparent 44%),
+    color-mix(in srgb, var(--panel-strong) 86%, transparent 14%);
 }
 
 .routine-summary-head {
@@ -634,7 +840,9 @@ button:active {
   padding: 8px 12px;
   border-radius: 999px;
   border: 1px solid var(--line);
-  background: color-mix(in srgb, var(--accent) 12%, var(--panel-strong) 88%);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.24), transparent),
+    color-mix(in srgb, var(--accent) 12%, var(--panel-strong) 88%);
   color: var(--text);
   font-size: 0.88rem;
   font-weight: 800;
@@ -652,7 +860,7 @@ button:active {
   padding: 10px 12px;
   border-radius: 16px;
   border: 1px solid var(--line);
-  background: color-mix(in srgb, var(--panel-strong) 88%, transparent 12%);
+  background: color-mix(in srgb, var(--panel-strong) 82%, transparent 18%);
 }
 
 .routine-summary-item strong {
@@ -676,15 +884,27 @@ button:active {
   border: 1px solid var(--line);
   border-radius: 16px;
   padding: 12px 14px;
-  background: var(--panel-strong);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent),
+    var(--field);
   color: var(--text);
   font-weight: 800;
 }
 
 .routine-split-button[aria-pressed="true"] {
   color: #ffffff;
-  border-color: transparent;
-  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  border-color: rgba(255, 255, 255, 0.38);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent 34%),
+    linear-gradient(135deg, var(--accent), var(--accent-strong));
+}
+
+.routine-split-button[aria-pressed="true"]::before,
+.workout-split-button[aria-pressed="true"]::before {
+  inset: 1px 12px auto;
+  height: 30%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0));
+  opacity: 0.62;
 }
 
 .routine-slider-field,
@@ -737,7 +957,7 @@ button:active {
   padding: 14px 16px;
   border: 1px dashed var(--line);
   border-radius: 16px;
-  background: color-mix(in srgb, var(--panel-strong) 88%, transparent 12%);
+  background: color-mix(in srgb, var(--panel-strong) 72%, transparent 28%);
   color: var(--muted);
 }
 
@@ -747,7 +967,7 @@ button:active {
   padding: 14px;
   border-radius: 18px;
   border: 1px solid var(--line);
-  background: color-mix(in srgb, var(--panel-strong) 92%, transparent 8%);
+  background: color-mix(in srgb, var(--panel-strong) 80%, transparent 20%);
 }
 
 .routine-editor-head {
@@ -777,7 +997,9 @@ button:active {
   padding: 18px;
   border: 1px solid var(--line);
   border-radius: 22px;
-  background: var(--panel-strong);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.26), transparent 44%),
+    var(--panel-strong);
 }
 
 .routine-output {
@@ -803,7 +1025,9 @@ button:active {
   justify-content: center;
   padding: 8px 12px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--accent) 14%, var(--panel-strong) 86%);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent),
+    color-mix(in srgb, var(--accent) 14%, var(--panel-strong) 86%);
   border: 1px solid var(--line);
   color: var(--text);
   font-weight: 800;
@@ -827,7 +1051,7 @@ button:active {
   padding: 12px 14px;
   border-radius: 16px;
   border: 1px solid var(--line);
-  background: color-mix(in srgb, var(--panel-strong) 92%, transparent 8%);
+  background: color-mix(in srgb, var(--panel-strong) 82%, transparent 18%);
 }
 
 .routine-item strong {
@@ -843,12 +1067,15 @@ button:active {
 .calendar-summary {
   padding: 10px 14px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--accent) 10%, var(--panel-strong) 90%);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.24), transparent),
+    color-mix(in srgb, var(--accent) 12%, var(--panel-strong) 88%);
   border: 1px solid var(--line);
   font-size: 0.92rem;
   font-weight: 700;
   color: var(--text);
   white-space: nowrap;
+  box-shadow: inset 0 1px 0 var(--glass-highlight);
 }
 
 .calendar-layout {
@@ -872,7 +1099,7 @@ button:active {
 
 .calendar-toolbar strong {
   font-size: 1.05rem;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 .calendar-nav {
@@ -899,6 +1126,7 @@ button:active {
 
 .calendar-grid {
   gap: 8px;
+  perspective: 900px;
 }
 
 .calendar-day,
@@ -909,8 +1137,11 @@ button:active {
 
 .calendar-day {
   position: relative;
-  border: 1px solid var(--line);
-  background: color-mix(in srgb, var(--panel-strong) 88%, transparent 12%);
+  --workout-shadow: rgba(54, 78, 109, 0.12);
+  border: 1px solid var(--calendar-cell-line);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.26), transparent 42%),
+    color-mix(in srgb, var(--panel-strong) 78%, transparent 22%);
   color: var(--text);
   padding: 10px;
   text-align: left;
@@ -920,116 +1151,246 @@ button:active {
   justify-content: space-between;
   gap: 8px;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    0 10px 18px rgba(15, 23, 42, 0.06);
+    inset 0 1px 0 var(--glass-highlight),
+    inset 0 -1px 0 rgba(20, 36, 56, 0.04),
+    0 1px 2px rgba(36, 54, 78, 0.035);
+  overflow: hidden;
+  transform: translateZ(0);
+  transform-style: preserve-3d;
+  transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+}
+
+.calendar-day::before {
+  content: none;
 }
 
 .calendar-day:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px) translateZ(8px);
+  border-color: var(--calendar-cell-line-strong);
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    inset 0 -1px 0 rgba(20, 36, 56, 0.05),
+    0 8px 18px rgba(54, 78, 109, 0.08);
 }
 
 .calendar-day.is-selected {
-  border-color: color-mix(in srgb, var(--accent) 40%, transparent 60%);
+  border-color: var(--calendar-cell-line-strong);
   box-shadow:
     0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent 82%),
-    0 14px 24px rgba(15, 23, 42, 0.1);
+    inset 0 1px 0 var(--glass-highlight),
+    inset 0 -1px 0 rgba(20, 36, 56, 0.05),
+    0 8px 18px rgba(47, 125, 246, 0.08);
 }
 
 .calendar-day.is-today {
   box-shadow:
     inset 0 0 0 2px color-mix(in srgb, var(--accent) 52%, transparent 48%),
-    0 10px 18px rgba(15, 23, 42, 0.06);
+    inset 0 1px 0 var(--glass-highlight),
+    inset 0 -1px 0 rgba(20, 36, 56, 0.05),
+    0 1px 2px rgba(36, 54, 78, 0.035);
 }
 
 .calendar-day.is-today.is-selected {
   box-shadow:
     inset 0 0 0 2px color-mix(in srgb, var(--accent) 58%, transparent 42%),
     0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent 82%),
-    0 14px 24px rgba(15, 23, 42, 0.1);
+    inset 0 1px 0 var(--glass-highlight),
+    inset 0 -1px 0 rgba(20, 36, 56, 0.05),
+    0 8px 18px rgba(47, 125, 246, 0.08);
 }
 
 .calendar-day.is-workout {
+  --day-pull-x: 0px;
+  --day-pull-y: 0px;
+  --day-tilt-x: 0deg;
+  --day-tilt-y: 0deg;
   color: #ffffff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.34),
+    inset 0 -8px 14px rgba(5, 12, 24, 0.1),
+    0 10px 18px var(--workout-shadow);
+  transform: translateZ(6px);
+}
+
+.calendar-day.is-workout.is-selected {
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent 82%),
+    inset 0 1px 0 rgba(255, 255, 255, 0.34),
+    inset 0 -8px 14px rgba(5, 12, 24, 0.1),
+    0 12px 22px var(--workout-shadow);
 }
 
 .calendar-day.split-pull {
+  --workout-shadow: rgba(91, 140, 255, 0.24);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0)),
-    linear-gradient(135deg, color-mix(in srgb, var(--pull) 92%, black 8%), color-mix(in srgb, var(--pull) 74%, black 26%));
-  border-color: transparent;
+    linear-gradient(145deg, rgba(255, 255, 255, 0.34), transparent 40%),
+    linear-gradient(145deg, color-mix(in srgb, var(--pull) 88%, white 12%), color-mix(in srgb, var(--pull) 84%, black 16%));
+  border-color: color-mix(in srgb, var(--pull) 34%, rgba(255, 255, 255, 0.5) 66%);
 }
 
 .calendar-day.split-push {
+  --workout-shadow: rgba(255, 107, 122, 0.24);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0)),
-    linear-gradient(135deg, color-mix(in srgb, var(--push) 94%, black 6%), color-mix(in srgb, var(--push) 76%, black 24%));
-  border-color: transparent;
+    linear-gradient(145deg, rgba(255, 255, 255, 0.34), transparent 40%),
+    linear-gradient(145deg, color-mix(in srgb, var(--push) 88%, white 12%), color-mix(in srgb, var(--push) 82%, black 18%));
+  border-color: color-mix(in srgb, var(--push) 34%, rgba(255, 255, 255, 0.5) 66%);
 }
 
 .calendar-day.split-leg {
+  --workout-shadow: rgba(47, 217, 154, 0.22);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0)),
-    linear-gradient(135deg, color-mix(in srgb, var(--leg) 90%, black 10%), color-mix(in srgb, var(--leg) 72%, black 28%));
-  border-color: transparent;
+    linear-gradient(145deg, rgba(255, 255, 255, 0.34), transparent 40%),
+    linear-gradient(145deg, color-mix(in srgb, var(--leg) 88%, white 12%), color-mix(in srgb, var(--leg) 82%, black 18%));
+  border-color: color-mix(in srgb, var(--leg) 34%, rgba(255, 255, 255, 0.5) 66%);
 }
 
 .calendar-day.split-cardio {
+  --workout-shadow: rgba(34, 199, 230, 0.24);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0)),
-    linear-gradient(135deg, color-mix(in srgb, var(--cardio) 92%, black 8%), color-mix(in srgb, var(--cardio) 74%, black 26%));
-  border-color: transparent;
+    linear-gradient(145deg, rgba(255, 255, 255, 0.34), transparent 40%),
+    linear-gradient(145deg, color-mix(in srgb, var(--cardio) 88%, white 12%), color-mix(in srgb, var(--cardio) 82%, black 18%));
+  border-color: color-mix(in srgb, var(--cardio) 34%, rgba(255, 255, 255, 0.5) 66%);
 }
 
 .calendar-day.has-cardio.split-pull {
+  --workout-shadow: rgba(34, 166, 242, 0.22);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0)),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.34), transparent 40%),
     linear-gradient(
-      90deg,
-      color-mix(in srgb, var(--pull) 90%, black 10%) 0%,
-      color-mix(in srgb, var(--pull) 84%, black 16%) 30%,
-      color-mix(in srgb, var(--pull) 68%, var(--cardio) 32%) 44%,
-      color-mix(in srgb, var(--cardio) 68%, var(--pull) 32%) 56%,
-      color-mix(in srgb, var(--cardio) 82%, black 18%) 70%,
-      color-mix(in srgb, var(--cardio) 78%, black 22%) 100%
+      145deg,
+      color-mix(in srgb, var(--pull) 88%, white 10%) 0%,
+      color-mix(in srgb, var(--pull) 58%, var(--cardio) 42%) 52%,
+      color-mix(in srgb, var(--cardio) 84%, black 12%) 100%
     );
 }
 
 .calendar-day.has-cardio.split-push {
+  --workout-shadow: rgba(255, 111, 151, 0.22);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0)),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.34), transparent 40%),
     linear-gradient(
-      90deg,
-      color-mix(in srgb, var(--push) 92%, black 8%) 0%,
-      color-mix(in srgb, var(--push) 84%, black 16%) 30%,
-      color-mix(in srgb, var(--push) 68%, var(--cardio) 32%) 44%,
-      color-mix(in srgb, var(--cardio) 68%, var(--push) 32%) 56%,
-      color-mix(in srgb, var(--cardio) 82%, black 18%) 70%,
-      color-mix(in srgb, var(--cardio) 78%, black 22%) 100%
+      145deg,
+      color-mix(in srgb, var(--push) 88%, white 10%) 0%,
+      color-mix(in srgb, var(--push) 58%, var(--cardio) 42%) 52%,
+      color-mix(in srgb, var(--cardio) 84%, black 12%) 100%
     );
 }
 
 .calendar-day.has-cardio.split-leg {
+  --workout-shadow: rgba(37, 209, 184, 0.22);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0)),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.34), transparent 40%),
     linear-gradient(
-      90deg,
-      color-mix(in srgb, var(--leg) 90%, black 10%) 0%,
-      color-mix(in srgb, var(--leg) 82%, black 18%) 30%,
-      color-mix(in srgb, var(--leg) 68%, var(--cardio) 32%) 44%,
-      color-mix(in srgb, var(--cardio) 68%, var(--leg) 32%) 56%,
-      color-mix(in srgb, var(--cardio) 82%, black 18%) 70%,
-      color-mix(in srgb, var(--cardio) 78%, black 22%) 100%
+      145deg,
+      color-mix(in srgb, var(--leg) 88%, white 10%) 0%,
+      color-mix(in srgb, var(--leg) 58%, var(--cardio) 42%) 52%,
+      color-mix(in srgb, var(--cardio) 84%, black 12%) 100%
     );
+}
+
+html[data-theme="dark"] .calendar-day {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.08), transparent 42%),
+    color-mix(in srgb, var(--panel-strong) 72%, transparent 28%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -8px 16px rgba(5, 12, 24, 0.18),
+    0 11px 18px rgba(5, 12, 24, 0.16);
+}
+
+html[data-theme="dark"] .calendar-day.split-pull {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.14), transparent 40%),
+    linear-gradient(145deg, color-mix(in srgb, var(--pull) 86%, white 10%), color-mix(in srgb, var(--pull) 78%, black 22%));
+}
+
+html[data-theme="dark"] .calendar-day.split-push {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.14), transparent 40%),
+    linear-gradient(145deg, color-mix(in srgb, var(--push) 86%, white 10%), color-mix(in srgb, var(--push) 78%, black 22%));
+}
+
+html[data-theme="dark"] .calendar-day.split-leg {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.14), transparent 40%),
+    linear-gradient(145deg, color-mix(in srgb, var(--leg) 86%, white 10%), color-mix(in srgb, var(--leg) 78%, black 22%));
+}
+
+html[data-theme="dark"] .calendar-day.split-cardio {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.14), transparent 40%),
+    linear-gradient(145deg, color-mix(in srgb, var(--cardio) 86%, white 10%), color-mix(in srgb, var(--cardio) 78%, black 22%));
+}
+
+html[data-theme="dark"] .calendar-day.has-cardio.split-pull {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.14), transparent 40%),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--pull) 86%, white 8%) 0%,
+      color-mix(in srgb, var(--pull) 56%, var(--cardio) 44%) 52%,
+      color-mix(in srgb, var(--cardio) 80%, black 16%) 100%
+    );
+}
+
+html[data-theme="dark"] .calendar-day.has-cardio.split-push {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.14), transparent 40%),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--push) 86%, white 8%) 0%,
+      color-mix(in srgb, var(--push) 56%, var(--cardio) 44%) 52%,
+      color-mix(in srgb, var(--cardio) 80%, black 16%) 100%
+    );
+}
+
+html[data-theme="dark"] .calendar-day.has-cardio.split-leg {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.14), transparent 40%),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--leg) 86%, white 8%) 0%,
+      color-mix(in srgb, var(--leg) 56%, var(--cardio) 44%) 52%,
+      color-mix(in srgb, var(--cardio) 80%, black 16%) 100%
+    );
+}
+
+.calendar-day.is-workout:hover,
+.calendar-day.is-workout.is-following {
+  transform:
+    translate3d(var(--day-pull-x), var(--day-pull-y), 14px)
+    rotateX(var(--day-tilt-x))
+    rotateY(var(--day-tilt-y));
+  border-color: rgba(255, 255, 255, 0.5);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.38),
+    inset 0 -10px 18px rgba(5, 12, 24, 0.12),
+    0 16px 28px var(--workout-shadow);
+}
+
+.calendar-day.is-workout.is-selected:hover,
+.calendar-day.is-workout.is-selected.is-following {
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--accent) 20%, transparent 80%),
+    inset 0 1px 0 rgba(255, 255, 255, 0.38),
+    inset 0 -10px 18px rgba(5, 12, 24, 0.12),
+    0 16px 28px var(--workout-shadow);
 }
 
 .calendar-day-empty {
   background: transparent;
-  border: 1px dashed rgba(107, 114, 128, 0.12);
+  border: 1px dashed color-mix(in srgb, var(--calendar-cell-line) 74%, transparent 26%);
 }
 
 .calendar-day-number {
   font-size: 0.96rem;
   font-weight: 800;
+  line-height: 1;
+  text-shadow: none;
+}
+
+.calendar-day.is-workout .calendar-day-number {
+  text-shadow: 0 1px 4px rgba(12, 18, 29, 0.24);
 }
 
 .calendar-day-label {
@@ -1039,7 +1400,8 @@ button:active {
   max-width: 100%;
   padding: 4px 8px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.24);
+  border: 1px solid rgba(255, 255, 255, 0.28);
   font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.04em;
@@ -1070,7 +1432,9 @@ button:active {
   min-height: 56px;
   justify-content: center;
   border: 1px solid var(--line);
-  background: color-mix(in srgb, var(--panel-strong) 88%, transparent 12%);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.24), transparent 42%),
+    color-mix(in srgb, var(--panel-strong) 76%, transparent 24%);
   color: var(--muted);
   font-weight: 800;
   letter-spacing: 0.02em;
@@ -1078,23 +1442,31 @@ button:active {
 
 .workout-split-button[aria-pressed="true"] {
   color: #ffffff;
-  border-color: transparent;
+  border-color: rgba(255, 255, 255, 0.38);
 }
 
 .workout-split-button[data-workout-type="PUSH"][aria-pressed="true"] {
-  background: linear-gradient(135deg, color-mix(in srgb, var(--push) 94%, black 6%), color-mix(in srgb, var(--push) 74%, black 26%));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 34%),
+    linear-gradient(145deg, color-mix(in srgb, var(--push) 88%, white 10%), color-mix(in srgb, var(--push) 82%, black 18%));
 }
 
 .workout-split-button[data-workout-type="PULL"][aria-pressed="true"] {
-  background: linear-gradient(135deg, color-mix(in srgb, var(--pull) 94%, black 6%), color-mix(in srgb, var(--pull) 74%, black 26%));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 34%),
+    linear-gradient(145deg, color-mix(in srgb, var(--pull) 88%, white 10%), color-mix(in srgb, var(--pull) 82%, black 18%));
 }
 
 .workout-split-button[data-workout-type="LEG"][aria-pressed="true"] {
-  background: linear-gradient(135deg, color-mix(in srgb, var(--leg) 94%, black 6%), color-mix(in srgb, var(--leg) 74%, black 26%));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 34%),
+    linear-gradient(145deg, color-mix(in srgb, var(--leg) 88%, white 10%), color-mix(in srgb, var(--leg) 82%, black 18%));
 }
 
 .workout-split-button[data-workout-type="CARDIO"][aria-pressed="true"] {
-  background: linear-gradient(135deg, color-mix(in srgb, var(--cardio) 94%, black 6%), color-mix(in srgb, var(--cardio) 74%, black 26%));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 34%),
+    linear-gradient(145deg, color-mix(in srgb, var(--cardio) 88%, white 10%), color-mix(in srgb, var(--cardio) 82%, black 18%));
 }
 
 .cardio-distance-field {
@@ -1144,13 +1516,26 @@ button:active {
   position: relative;
   padding: 16px;
   border-radius: 22px;
-  background: var(--panel-strong);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.34), transparent 42%),
+    var(--panel-strong);
   border: 1px solid var(--line);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.55),
-    0 16px 34px rgba(15, 23, 42, 0.08);
+    inset 0 1px 0 var(--glass-highlight),
+    0 18px 42px rgba(54, 78, 109, 0.12);
+  -webkit-backdrop-filter: blur(22px) saturate(1.55);
+  backdrop-filter: blur(22px) saturate(1.55);
   transform: translateZ(22px);
   transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+html[data-theme="dark"] .chart-card {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.09), transparent 40%),
+    var(--panel-strong);
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    0 18px 42px rgba(0, 0, 0, 0.24);
 }
 
 .chart-card[aria-disabled="true"] {
@@ -1162,10 +1547,10 @@ button:active {
 }
 
 .chart-card.is-interactive:hover {
-  transform: translateZ(30px) translateY(-3px) rotateX(1.5deg);
+  transform: translateZ(30px) translateY(-3px);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.65),
-    0 24px 44px rgba(15, 23, 42, 0.16);
+    inset 0 1px 0 var(--glass-highlight),
+    0 26px 54px rgba(54, 78, 109, 0.18);
   border-color: color-mix(in srgb, var(--accent) 26%, var(--line) 74%);
 }
 
@@ -1185,33 +1570,43 @@ button:active {
   width: 12px;
   height: 12px;
   border-radius: 999px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.46),
+    0 0 18px currentColor;
 }
 
 .metric-dot.weight {
   background: var(--weight);
+  color: var(--weight);
 }
 
 .metric-dot.fat {
   background: var(--fat);
+  color: var(--fat);
 }
 
 .metric-dot.muscle {
   background: var(--muscle);
+  color: var(--muscle);
 }
 
 .chart-stage {
   position: relative;
   border-radius: 18px;
+  overflow: hidden;
 }
 
 canvas {
   width: 100%;
   display: block;
   border-radius: 16px;
-  background: color-mix(in srgb, var(--panel-strong) 86%, transparent 14%);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.04)),
+    var(--canvas);
+  border: 1px solid var(--line);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.24),
-    inset 0 -10px 24px rgba(15, 23, 42, 0.06);
+    inset 0 1px 0 var(--glass-highlight),
+    inset 0 -18px 34px rgba(54, 78, 109, 0.08);
 }
 
 .chart-tooltip {
@@ -1220,11 +1615,15 @@ canvas {
   left: 0;
   min-width: 112px;
   padding: 10px 12px;
-  border-radius: 14px;
-  background: rgba(17, 24, 39, 0.94);
+  border-radius: 16px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.18), transparent 42%),
+    rgba(17, 24, 39, 0.84);
   color: #f9fafb;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 18px 34px rgba(15, 23, 42, 0.26);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 20px 44px rgba(15, 23, 42, 0.26);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  backdrop-filter: blur(18px) saturate(1.5);
   pointer-events: none;
   opacity: 0;
   transform: translateY(8px);
@@ -1233,9 +1632,11 @@ canvas {
 }
 
 html[data-theme="dark"] .chart-tooltip {
-  background: rgba(255, 255, 255, 0.96);
-  color: #111827;
-  border-color: rgba(15, 23, 42, 0.08);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.2), transparent 42%),
+    rgba(20, 30, 45, 0.9);
+  color: #f7fbff;
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
 .chart-tooltip.is-visible {
@@ -1264,6 +1665,7 @@ html[data-theme="dark"] .chart-tooltip {
 
 .table-wrap {
   overflow-x: auto;
+  padding: 2px;
 }
 
 .history-actions {
@@ -1278,23 +1680,58 @@ html[data-theme="dark"] .chart-tooltip {
 
 table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0 8px;
 }
 
 th,
 td {
   padding: 14px 12px;
   text-align: left;
-  border-bottom: 1px solid var(--line);
 }
 
 th {
   color: var(--muted);
   font-size: 0.9rem;
+  font-weight: 800;
+  border-bottom: 0;
+  white-space: nowrap;
+}
+
+td {
+  background: color-mix(in srgb, var(--panel-strong) 76%, transparent 24%);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+td:first-child {
+  border-left: 1px solid var(--line);
+  border-radius: 16px 0 0 16px;
+  font-weight: 700;
+}
+
+td:last-child {
+  border-right: 1px solid var(--line);
+  border-radius: 0 16px 16px 0;
+}
+
+tbody tr {
+  filter: drop-shadow(0 10px 24px rgba(54, 78, 109, 0.08));
+  transition: filter 140ms ease, transform 140ms ease;
+}
+
+tbody tr:hover {
+  filter: drop-shadow(0 12px 28px rgba(54, 78, 109, 0.12));
+  transform: translateY(-1px);
+}
+
+tbody tr:hover td {
+  background: color-mix(in srgb, var(--panel-strong) 84%, transparent 16%);
 }
 
 .empty-row {
   color: var(--muted);
+  text-align: center;
 }
 
 .delete-row {
@@ -1320,8 +1757,11 @@ th {
 .chart-modal-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(9, 9, 11, 0.46);
-  backdrop-filter: blur(10px);
+  background:
+    linear-gradient(120deg, rgba(15, 23, 42, 0.42), rgba(36, 54, 78, 0.34)),
+    rgba(9, 9, 11, 0.36);
+  -webkit-backdrop-filter: blur(18px) saturate(1.25);
+  backdrop-filter: blur(18px) saturate(1.25);
   opacity: 0;
   transition: opacity 220ms ease;
 }
@@ -1333,16 +1773,22 @@ th {
 .chart-modal-panel {
   position: relative;
   z-index: 1;
-  width: min(980px, calc(100vw - 48px));
+  width: min(980px, calc(100% - 48px));
   max-height: calc(100vh - 48px);
   padding: 22px 22px 24px;
-  border-radius: 30px;
-  border: 1px solid var(--line);
-  background: color-mix(in srgb, var(--panel) 92%, black 8%);
-  box-shadow: 0 34px 80px rgba(15, 23, 42, 0.32);
+  border-radius: 28px;
+  border: 1px solid var(--line-strong);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.42), transparent 38%),
+    var(--panel);
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    0 34px 90px rgba(15, 23, 42, 0.34);
+  -webkit-backdrop-filter: blur(32px) saturate(1.75);
+  backdrop-filter: blur(32px) saturate(1.75);
   overflow: hidden;
   opacity: 0;
-  transform: translateY(28px) scale(0.72) rotateX(68deg) rotateY(-1turn);
+  transform: translateY(24px) scale(0.96);
   transform-style: preserve-3d;
   backface-visibility: hidden;
 }
@@ -1362,7 +1808,7 @@ th {
 
 .chart-modal-head h3 {
   margin: 0;
-  font-size: clamp(1.3rem, 3vw, 2rem);
+  font-size: 1.8rem;
 }
 
 .chart-modal-close {
@@ -1386,17 +1832,17 @@ th {
 @keyframes chart-modal-in {
   from {
     opacity: 0;
-    transform: translateY(28px) scale(0.72) rotateX(68deg) rotateY(-1turn);
+    transform: translateY(24px) scale(0.96);
   }
 
   55% {
     opacity: 1;
-    transform: translateY(-6px) scale(0.94) rotateX(-12deg) rotateY(-140deg);
+    transform: translateY(-4px) scale(1.01);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0) scale(1) rotateX(0deg) rotateY(0deg);
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -1405,17 +1851,37 @@ th {
   .record-grid,
   .profile-layout,
   .calendar-layout,
-  .charts,
-  .summary-grid {
+  .charts {
     grid-template-columns: 1fr;
   }
 
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .summary-stat {
+    border-right: 1px solid color-mix(in srgb, var(--line) 62%, transparent 38%);
+    border-bottom: 1px solid color-mix(in srgb, var(--line) 52%, transparent 48%);
+  }
+
+  .summary-stat:nth-child(2n) {
+    border-right: 0;
+  }
+
+  .summary-stat:nth-last-child(-n + 2) {
+    border-bottom: 0;
+  }
+
+  .topbar h1 {
+    font-size: 4rem;
+  }
 }
 
 @media (max-width: 720px) {
   .page-shell {
     width: min(100% - 24px, 1000px);
     perspective: none;
+    padding-top: 20px;
   }
 
   .topbar {
@@ -1425,6 +1891,11 @@ th {
 
   .theme-toggle {
     align-self: flex-end;
+  }
+
+  .topbar h1 {
+    font-size: 3.05rem;
+    line-height: 1.04;
   }
 
   .panel-head-inline {
@@ -1451,6 +1922,23 @@ th {
     justify-content: center;
   }
 
+  .calendar-panel,
+  .chart-panel,
+  .form-panel,
+  .history-panel,
+  .summary-panel {
+    padding: 20px;
+  }
+
+  .calendar-board,
+  .calendar-editor {
+    padding: 12px;
+  }
+
+  .calendar-grid {
+    gap: 4px;
+  }
+
   .calendar-day,
   .calendar-day-empty {
     min-height: 66px;
@@ -1458,7 +1946,7 @@ th {
   }
 
   .calendar-day {
-    padding: 8px;
+    padding: 6px;
   }
 
   .calendar-day-number {
@@ -1467,9 +1955,9 @@ th {
 
   .calendar-day-label {
     max-width: 100%;
-    padding: 2px 4px;
-    font-size: 0.55rem;
-    letter-spacing: 0.02em;
+    padding: 2px 3px;
+    font-size: 0.48rem;
+    letter-spacing: 0;
   }
 
   .chart-modal {
@@ -1477,10 +1965,14 @@ th {
   }
 
   .chart-modal-panel {
-    width: min(100vw - 24px, 100%);
+    width: min(100% - 24px, 100%);
     max-height: calc(100vh - 24px);
     padding: 18px;
     border-radius: 24px;
+  }
+
+  .chart-modal-head h3 {
+    font-size: 1.42rem;
   }
 
   .chart-modal-head {
