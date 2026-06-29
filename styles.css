@@ -371,18 +371,6 @@ html[data-theme="dark"] .summary-stat strong {
   color: #ffffff;
 }
 
-.summary-panel .section-label,
-.summary-panel .summary-stat span,
-.summary-panel .summary-stat strong {
-  color: #000000;
-}
-
-html[data-theme="dark"] .summary-panel .section-label,
-html[data-theme="dark"] .summary-panel .summary-stat span,
-html[data-theme="dark"] .summary-panel .summary-stat strong {
-  color: #000000;
-}
-
 .layout {
   display: grid;
   grid-template-columns: repeat(2, minmax(320px, 1fr));
