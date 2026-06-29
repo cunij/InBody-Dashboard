@@ -1,13 +1,14 @@
 :root {
+  --page-background-image: url("./this.avif");
   --bg: #eef5fb;
   --bg-deep: #dbe8f4;
-  --bg-layer: rgba(255, 255, 255, 0.48);
-  --panel: rgba(255, 255, 255, 0.46);
-  --panel-strong: rgba(255, 255, 255, 0.72);
-  --field: rgba(255, 255, 255, 0.56);
-  --canvas: rgba(255, 255, 255, 0.36);
-  --line: rgba(255, 255, 255, 0.54);
-  --line-strong: rgba(255, 255, 255, 0.78);
+  --bg-layer: rgba(255, 255, 255, 0.24);
+  --panel: rgba(255, 255, 255, 0.3);
+  --panel-strong: rgba(255, 255, 255, 0.5);
+  --field: rgba(255, 255, 255, 0.34);
+  --canvas: rgba(255, 255, 255, 0.22);
+  --line: rgba(255, 255, 255, 0.38);
+  --line-strong: rgba(255, 255, 255, 0.56);
   --calendar-cell-line: rgba(45, 65, 92, 0.12);
   --calendar-cell-line-strong: rgba(47, 125, 246, 0.28);
   --edge: rgba(36, 54, 78, 0.12);
@@ -23,20 +24,20 @@
   --push: #ff6b7a;
   --leg: #2fd99a;
   --cardio: #22c7e6;
-  --glass-highlight: rgba(255, 255, 255, 0.76);
-  --glass-glow: rgba(126, 190, 255, 0.22);
-  --shadow: 0 30px 80px rgba(54, 78, 109, 0.18);
+  --glass-highlight: rgba(255, 255, 255, 0.5);
+  --glass-glow: rgba(126, 190, 255, 0.28);
+  --shadow: 0 30px 80px rgba(54, 78, 109, 0.16);
   --shadow-soft: 0 16px 42px rgba(54, 78, 109, 0.12);
 }
 
 html[data-theme="dark"] {
   --bg: #0f1520;
   --bg-deep: #070b12;
-  --bg-layer: rgba(21, 30, 45, 0.48);
-  --panel: rgba(20, 30, 45, 0.5);
-  --panel-strong: rgba(25, 36, 54, 0.72);
-  --field: rgba(21, 31, 47, 0.62);
-  --canvas: rgba(12, 18, 29, 0.5);
+  --bg-layer: rgba(19, 29, 45, 0.32);
+  --panel: rgba(18, 28, 44, 0.42);
+  --panel-strong: rgba(23, 34, 52, 0.52);
+  --field: rgba(18, 28, 44, 0.42);
+  --canvas: rgba(12, 18, 29, 0.34);
   --line: rgba(255, 255, 255, 0.16);
   --line-strong: rgba(255, 255, 255, 0.28);
   --calendar-cell-line: rgba(255, 255, 255, 0.16);
@@ -54,9 +55,9 @@ html[data-theme="dark"] {
   --push: #ff7d90;
   --leg: #4be3ab;
   --cardio: #45d4ef;
-  --glass-highlight: rgba(255, 255, 255, 0.11);
-  --glass-glow: rgba(123, 183, 255, 0.2);
-  --shadow: 0 34px 90px rgba(0, 0, 0, 0.42);
+  --glass-highlight: rgba(255, 255, 255, 0.12);
+  --glass-glow: rgba(123, 183, 255, 0.24);
+  --shadow: 0 34px 90px rgba(0, 0, 0, 0.34);
   --shadow-soft: 0 18px 48px rgba(0, 0, 0, 0.28);
 }
 
@@ -75,18 +76,24 @@ body {
   font-family: "SUIT", sans-serif;
   color: var(--text);
   background:
-    linear-gradient(118deg, rgba(181, 222, 255, 0.72) 0%, rgba(255, 240, 247, 0.52) 34%, rgba(225, 251, 244, 0.58) 70%, rgba(245, 247, 255, 0.72) 100%),
-    conic-gradient(from 160deg at 52% 18%, rgba(255, 255, 255, 0.9), rgba(181, 222, 255, 0.54), rgba(255, 221, 235, 0.48), rgba(221, 248, 239, 0.56), rgba(255, 255, 255, 0.9)),
+    linear-gradient(118deg, rgba(239, 247, 255, 0.7) 0%, rgba(255, 246, 251, 0.58) 34%, rgba(236, 255, 248, 0.54) 70%, rgba(245, 247, 255, 0.66) 100%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.26) 0%, rgba(219, 232, 244, 0.3) 100%),
+    var(--page-background-image),
     linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
   background-attachment: fixed;
+  background-position: center;
+  background-size: cover;
 }
 
 html[data-theme="dark"] body {
   background:
-    linear-gradient(120deg, rgba(41, 84, 140, 0.46) 0%, rgba(78, 46, 82, 0.38) 36%, rgba(32, 94, 82, 0.34) 72%, rgba(14, 19, 30, 0.88) 100%),
-    conic-gradient(from 150deg at 48% 12%, rgba(255, 255, 255, 0.08), rgba(72, 118, 178, 0.36), rgba(107, 64, 102, 0.32), rgba(44, 119, 101, 0.28), rgba(255, 255, 255, 0.07)),
+    linear-gradient(120deg, rgba(18, 36, 62, 0.54) 0%, rgba(50, 32, 58, 0.46) 36%, rgba(17, 58, 52, 0.42) 72%, rgba(7, 11, 18, 0.78) 100%),
+    linear-gradient(180deg, rgba(7, 11, 18, 0.32) 0%, rgba(7, 11, 18, 0.58) 100%),
+    var(--page-background-image),
     linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
   background-attachment: fixed;
+  background-position: center;
+  background-size: cover;
 }
 
 body::before {
@@ -106,7 +113,7 @@ html[data-theme="dark"] body::before {
   background:
     linear-gradient(90deg, rgba(255, 255, 255, 0.12), transparent 20%, rgba(255, 255, 255, 0.08) 44%, transparent 68%, rgba(255, 255, 255, 0.1)),
     repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.08) 0 1px, transparent 1px 12px);
-  opacity: 0.36;
+  opacity: 0.2;
 }
 
 body.modal-open {
@@ -184,7 +191,7 @@ textarea {
   border-radius: 999px;
   padding: 11px 16px;
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.5), transparent 44%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.24), transparent 44%),
     var(--bg-layer);
   color: var(--text);
   box-shadow: var(--shadow-soft);
@@ -197,17 +204,19 @@ textarea {
 .panel {
   position: relative;
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.5), transparent 34%),
-    linear-gradient(315deg, rgba(255, 255, 255, 0.18), transparent 42%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.12) 16%, transparent 44%),
+    linear-gradient(315deg, rgba(255, 255, 255, 0.12), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.015)),
     var(--panel);
   border: 1px solid var(--line-strong);
   border-radius: 26px;
   box-shadow:
     inset 0 1px 0 var(--glass-highlight),
-    inset 0 -24px 50px rgba(255, 255, 255, 0.18),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1),
+    inset 0 -28px 56px rgba(255, 255, 255, 0.08),
     var(--shadow);
-  -webkit-backdrop-filter: blur(30px) saturate(1.75);
-  backdrop-filter: blur(30px) saturate(1.75);
+  -webkit-backdrop-filter: blur(42px) saturate(1.75) brightness(1.02);
+  backdrop-filter: blur(42px) saturate(1.75) brightness(1.02);
   transform-style: preserve-3d;
   transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
   overflow: hidden;
@@ -215,12 +224,14 @@ textarea {
 
 html[data-theme="dark"] .panel {
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.14), transparent 32%),
-    linear-gradient(315deg, rgba(255, 255, 255, 0.06), transparent 42%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.035) 16%, transparent 44%),
+    linear-gradient(315deg, rgba(255, 255, 255, 0.04), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0.006)),
     var(--panel);
   box-shadow:
     inset 0 1px 0 var(--glass-highlight),
-    inset 0 -18px 42px rgba(255, 255, 255, 0.06),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.045),
+    inset 0 -20px 46px rgba(255, 255, 255, 0.025),
     var(--shadow);
 }
 
@@ -237,9 +248,36 @@ button::before {
   height: 46%;
   border-radius: inherit;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.54), rgba(255, 255, 255, 0)),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.34), transparent 50%, rgba(255, 255, 255, 0.16));
+    linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0)),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.16), transparent 50%, rgba(255, 255, 255, 0.07));
   pointer-events: none;
+}
+
+.panel::after,
+.calendar-board::after,
+.calendar-editor::after,
+.chart-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(118deg, rgba(255, 255, 255, 0.15), transparent 18% 72%, rgba(255, 255, 255, 0.08)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1), transparent 34%);
+  mix-blend-mode: screen;
+  opacity: 0.44;
+  pointer-events: none;
+}
+
+html[data-theme="dark"] .panel::after,
+html[data-theme="dark"] .calendar-board::after,
+html[data-theme="dark"] .calendar-editor::after,
+html[data-theme="dark"] .chart-card::after {
+  background:
+    linear-gradient(118deg, rgba(255, 255, 255, 0.055), transparent 18% 72%, rgba(255, 255, 255, 0.04)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 34%);
+  opacity: 0.42;
 }
 
 .panel::before,
@@ -266,7 +304,7 @@ html[data-theme="dark"] .theme-toggle::before,
 html[data-theme="dark"] .calendar-board::before,
 html[data-theme="dark"] .calendar-editor::before,
 html[data-theme="dark"] button::before {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0));
 }
 
 .panel:hover {
@@ -274,7 +312,8 @@ html[data-theme="dark"] button::before {
   border-color: color-mix(in srgb, var(--accent) 22%, var(--line-strong) 78%);
   box-shadow:
     inset 0 1px 0 var(--glass-highlight),
-    inset 0 -24px 50px rgba(255, 255, 255, 0.2),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+    inset 0 -28px 56px rgba(255, 255, 255, 0.1),
     0 36px 92px rgba(54, 78, 109, 0.22);
 }
 
@@ -498,12 +537,12 @@ textarea {
   border-radius: 16px;
   padding: 14px 16px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.04)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.025)),
     var(--field);
   color: var(--text);
   box-shadow:
     inset 0 1px 0 var(--glass-highlight),
-    inset 0 -12px 28px rgba(255, 255, 255, 0.1),
+    inset 0 -12px 28px rgba(255, 255, 255, 0.045),
     0 10px 24px rgba(54, 78, 109, 0.08);
   -webkit-backdrop-filter: blur(18px) saturate(1.5);
   backdrop-filter: blur(18px) saturate(1.5);
@@ -586,23 +625,27 @@ textarea {
   border: 1px solid var(--line);
   border-radius: 22px;
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.34), transparent 42%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.3), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), transparent),
     var(--panel-strong);
   box-shadow:
     inset 0 1px 0 var(--glass-highlight),
-    0 18px 42px rgba(54, 78, 109, 0.12);
-  -webkit-backdrop-filter: blur(24px) saturate(1.55);
-  backdrop-filter: blur(24px) saturate(1.55);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.075),
+    0 18px 42px rgba(54, 78, 109, 0.1);
+  -webkit-backdrop-filter: blur(34px) saturate(1.65) brightness(1.01);
+  backdrop-filter: blur(34px) saturate(1.65) brightness(1.01);
 }
 
 html[data-theme="dark"] .calendar-board,
 html[data-theme="dark"] .calendar-editor {
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.09), transparent 40%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.075), transparent 40%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent),
     var(--panel-strong);
   box-shadow:
     inset 0 1px 0 var(--glass-highlight),
-    0 18px 42px rgba(0, 0, 0, 0.24);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.035),
+    0 18px 42px rgba(0, 0, 0, 0.2);
 }
 
 .form-actions {
@@ -623,7 +666,7 @@ button {
   backdrop-filter: blur(18px) saturate(1.45);
   transition: opacity 140ms ease, background 140ms ease, box-shadow 140ms ease, transform 140ms ease, border-color 140ms ease;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
     0 10px 22px rgba(54, 78, 109, 0.12);
 }
 
@@ -652,22 +695,22 @@ button:focus-visible {
 
 .primary {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.36), rgba(255, 255, 255, 0.04)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.025)),
     linear-gradient(135deg, var(--accent), var(--accent-strong));
   color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.46);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .primary::before {
   inset: 1px 12px auto;
   height: 28%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0));
-  opacity: 0.46;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0));
+  opacity: 0.34;
 }
 
 .secondary {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.04)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.025)),
     color-mix(in srgb, var(--accent) 14%, var(--panel-strong) 86%);
   color: var(--text);
   border: 1px solid var(--line);
@@ -675,8 +718,8 @@ button:focus-visible {
 
 .ghost {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.02)),
-    rgba(255, 255, 255, 0.08);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.015)),
+    rgba(255, 255, 255, 0.045);
   color: var(--text);
   border: 1px solid var(--line);
 }
@@ -685,10 +728,10 @@ button:focus-visible {
   color: color-mix(in srgb, var(--muted) 76%, #b91c1c 24%);
   border-color: color-mix(in srgb, var(--line) 82%, #ef4444 18%);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.01)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.008)),
     color-mix(in srgb, #ef4444 5%, transparent 95%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
     0 6px 14px rgba(54, 78, 109, 0.06);
   opacity: 0.74;
 }
@@ -713,8 +756,8 @@ html[data-theme="dark"] .danger-ghost {
 .workout-split-button[aria-pressed="true"]::before {
   inset: 1px 12px auto;
   height: 30%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0));
-  opacity: 0.62;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0));
+  opacity: 0.42;
 }
 
 .calendar-summary {
@@ -722,7 +765,7 @@ html[data-theme="dark"] .danger-ghost {
   padding: 10px 14px;
   border-radius: 999px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.24), transparent),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent),
     color-mix(in srgb, var(--accent) 12%, var(--panel-strong) 88%);
   border: 1px solid var(--line);
   font-size: 0.92rem;
@@ -794,10 +837,11 @@ html[data-theme="dark"] .danger-ghost {
   --workout-shadow: rgba(54, 78, 109, 0.12);
   border: 1px solid var(--calendar-cell-line);
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.26), transparent 42%),
-    color-mix(in srgb, var(--panel-strong) 78%, transparent 22%);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0) 34%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.055), transparent 32%),
+    color-mix(in srgb, var(--panel-strong) 58%, transparent 42%);
   color: var(--text);
-  padding: 10px;
+  padding: 12px 12px 11px;
   text-align: left;
   display: flex;
   flex-direction: column;
@@ -805,52 +849,85 @@ html[data-theme="dark"] .danger-ghost {
   justify-content: space-between;
   gap: 8px;
   box-shadow:
-    inset 0 1px 0 var(--glass-highlight),
-    inset 0 -1px 0 rgba(20, 36, 56, 0.04),
-    0 1px 2px rgba(36, 54, 78, 0.035);
+    inset 0 6px 10px rgba(255, 255, 255, 0.055),
+    inset 0 -7px 11px rgba(5, 12, 24, 0.11),
+    inset 6px 0 10px rgba(255, 255, 255, 0.025),
+    inset -6px 0 10px rgba(5, 12, 24, 0.07),
+    0 5px 9px rgba(5, 12, 24, 0.075);
+  -webkit-backdrop-filter: blur(18px) saturate(1.65);
+  backdrop-filter: blur(18px) saturate(1.65);
   overflow: hidden;
-  transform: translateZ(0);
+  transform: translateZ(4px);
   transform-style: preserve-3d;
-  transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+  transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease, filter 140ms ease;
 }
 
 .calendar-day::before {
-  content: none;
+  content: "";
+  position: absolute;
+  inset: 2px 4px auto;
+  height: 24%;
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0));
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.calendar-day::after {
+  content: "";
+  position: absolute;
+  inset: auto 7px 5px;
+  height: 14%;
+  border-radius: 50%;
+  background: linear-gradient(180deg, transparent, rgba(5, 12, 24, 0.12));
+  filter: blur(8px);
+  opacity: 0.28;
+  pointer-events: none;
+  transform: translateZ(-1px);
+}
+
+.calendar-day > * {
+  position: relative;
+  z-index: 1;
 }
 
 .calendar-day:hover {
-  transform: translateY(-2px) translateZ(8px);
+  transform: translateY(-1px) translateZ(8px);
   border-color: var(--calendar-cell-line-strong);
+  filter: saturate(1.04);
   box-shadow:
-    inset 0 1px 0 var(--glass-highlight),
-    inset 0 -1px 0 rgba(20, 36, 56, 0.05),
-    0 8px 18px rgba(54, 78, 109, 0.08);
+    inset 0 7px 11px rgba(255, 255, 255, 0.065),
+    inset 0 -8px 12px rgba(5, 12, 24, 0.12),
+    inset 6px 0 10px rgba(255, 255, 255, 0.03),
+    inset -6px 0 10px rgba(5, 12, 24, 0.08),
+    0 7px 12px rgba(5, 12, 24, 0.09);
 }
 
 .calendar-day.is-selected {
   border-color: var(--calendar-cell-line-strong);
   box-shadow:
     0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent 82%),
-    inset 0 1px 0 var(--glass-highlight),
-    inset 0 -1px 0 rgba(20, 36, 56, 0.05),
-    0 8px 18px rgba(47, 125, 246, 0.08);
+    inset 0 7px 11px rgba(255, 255, 255, 0.065),
+    inset 0 -8px 12px rgba(5, 12, 24, 0.12),
+    0 7px 13px rgba(47, 125, 246, 0.1);
 }
 
 .calendar-day.is-today {
   box-shadow:
     inset 0 0 0 2px color-mix(in srgb, var(--accent) 52%, transparent 48%),
-    inset 0 1px 0 var(--glass-highlight),
-    inset 0 -1px 0 rgba(20, 36, 56, 0.05),
-    0 1px 2px rgba(36, 54, 78, 0.035);
+    inset 0 6px 10px rgba(255, 255, 255, 0.055),
+    inset 0 -7px 11px rgba(5, 12, 24, 0.11),
+    0 5px 9px rgba(36, 54, 78, 0.08);
 }
 
 .calendar-day.is-today.is-selected {
   box-shadow:
     inset 0 0 0 2px color-mix(in srgb, var(--accent) 58%, transparent 42%),
     0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent 82%),
-    inset 0 1px 0 var(--glass-highlight),
-    inset 0 -1px 0 rgba(20, 36, 56, 0.05),
-    0 8px 18px rgba(47, 125, 246, 0.08);
+    inset 0 7px 11px rgba(255, 255, 255, 0.065),
+    inset 0 -8px 12px rgba(5, 12, 24, 0.12),
+    0 7px 13px rgba(47, 125, 246, 0.1);
 }
 
 .calendar-day.is-workout {
@@ -860,56 +937,63 @@ html[data-theme="dark"] .danger-ghost {
   --day-tilt-y: 0deg;
   color: #ffffff;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.34),
-    inset 0 -8px 14px rgba(5, 12, 24, 0.1),
-    0 10px 18px var(--workout-shadow);
-  transform: translateZ(6px);
+    inset 0 7px 12px rgba(255, 255, 255, 0.13),
+    inset 0 -8px 12px rgba(5, 12, 24, 0.14),
+    inset 6px 0 10px rgba(255, 255, 255, 0.035),
+    inset -6px 0 10px rgba(5, 12, 24, 0.08),
+    0 8px 13px var(--workout-shadow);
+  transform: translateZ(7px);
 }
 
 .calendar-day.is-workout.is-selected {
   box-shadow:
     0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent 82%),
-    inset 0 1px 0 rgba(255, 255, 255, 0.34),
-    inset 0 -8px 14px rgba(5, 12, 24, 0.1),
-    0 12px 22px var(--workout-shadow);
+    inset 0 7px 12px rgba(255, 255, 255, 0.14),
+    inset 0 -8px 12px rgba(5, 12, 24, 0.14),
+    0 9px 15px var(--workout-shadow);
 }
 
 .calendar-day.split-pull {
   --workout-shadow: rgba(91, 140, 255, 0.24);
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.34), transparent 40%),
-    linear-gradient(145deg, color-mix(in srgb, var(--pull) 88%, white 12%), color-mix(in srgb, var(--pull) 84%, black 16%));
+    linear-gradient(180deg, rgba(255, 255, 255, 0.11), transparent 32%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.06), transparent 30%),
+    linear-gradient(145deg, color-mix(in srgb, var(--pull) 90%, white 10%), color-mix(in srgb, var(--pull) 84%, black 16%));
   border-color: color-mix(in srgb, var(--pull) 34%, rgba(255, 255, 255, 0.5) 66%);
 }
 
 .calendar-day.split-push {
   --workout-shadow: rgba(255, 107, 122, 0.24);
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.34), transparent 40%),
-    linear-gradient(145deg, color-mix(in srgb, var(--push) 88%, white 12%), color-mix(in srgb, var(--push) 82%, black 18%));
+    linear-gradient(180deg, rgba(255, 255, 255, 0.11), transparent 32%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.06), transparent 30%),
+    linear-gradient(145deg, color-mix(in srgb, var(--push) 90%, white 10%), color-mix(in srgb, var(--push) 82%, black 18%));
   border-color: color-mix(in srgb, var(--push) 34%, rgba(255, 255, 255, 0.5) 66%);
 }
 
 .calendar-day.split-leg {
   --workout-shadow: rgba(47, 217, 154, 0.22);
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.34), transparent 40%),
-    linear-gradient(145deg, color-mix(in srgb, var(--leg) 88%, white 12%), color-mix(in srgb, var(--leg) 82%, black 18%));
+    linear-gradient(180deg, rgba(255, 255, 255, 0.11), transparent 32%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.06), transparent 30%),
+    linear-gradient(145deg, color-mix(in srgb, var(--leg) 90%, white 10%), color-mix(in srgb, var(--leg) 82%, black 18%));
   border-color: color-mix(in srgb, var(--leg) 34%, rgba(255, 255, 255, 0.5) 66%);
 }
 
 .calendar-day.split-cardio {
   --workout-shadow: rgba(34, 199, 230, 0.24);
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.34), transparent 40%),
-    linear-gradient(145deg, color-mix(in srgb, var(--cardio) 88%, white 12%), color-mix(in srgb, var(--cardio) 82%, black 18%));
+    linear-gradient(180deg, rgba(255, 255, 255, 0.11), transparent 32%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.06), transparent 30%),
+    linear-gradient(145deg, color-mix(in srgb, var(--cardio) 90%, white 10%), color-mix(in srgb, var(--cardio) 82%, black 18%));
   border-color: color-mix(in srgb, var(--cardio) 34%, rgba(255, 255, 255, 0.5) 66%);
 }
 
 .calendar-day.has-cardio.split-pull {
   --workout-shadow: rgba(34, 166, 242, 0.22);
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.34), transparent 40%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1), transparent 32%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.055), transparent 30%),
     linear-gradient(
       145deg,
       color-mix(in srgb, var(--pull) 88%, white 10%) 0%,
@@ -921,7 +1005,8 @@ html[data-theme="dark"] .danger-ghost {
 .calendar-day.has-cardio.split-push {
   --workout-shadow: rgba(255, 111, 151, 0.22);
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.34), transparent 40%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1), transparent 32%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.055), transparent 30%),
     linear-gradient(
       145deg,
       color-mix(in srgb, var(--push) 88%, white 10%) 0%,
@@ -933,7 +1018,8 @@ html[data-theme="dark"] .danger-ghost {
 .calendar-day.has-cardio.split-leg {
   --workout-shadow: rgba(37, 209, 184, 0.22);
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.34), transparent 40%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1), transparent 32%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.055), transparent 30%),
     linear-gradient(
       145deg,
       color-mix(in srgb, var(--leg) 88%, white 10%) 0%,
@@ -944,41 +1030,50 @@ html[data-theme="dark"] .danger-ghost {
 
 html[data-theme="dark"] .calendar-day {
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.08), transparent 42%),
-    color-mix(in srgb, var(--panel-strong) 72%, transparent 28%);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.028), transparent 34%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.025), transparent 32%),
+    color-mix(in srgb, var(--panel-strong) 58%, transparent 42%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    inset 0 -8px 16px rgba(5, 12, 24, 0.18),
-    0 11px 18px rgba(5, 12, 24, 0.16);
+    inset 0 6px 10px rgba(255, 255, 255, 0.035),
+    inset 0 -7px 11px rgba(0, 0, 0, 0.15),
+    inset 6px 0 10px rgba(255, 255, 255, 0.012),
+    inset -6px 0 10px rgba(0, 0, 0, 0.08),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 5px 9px rgba(0, 0, 0, 0.12);
 }
 
 html[data-theme="dark"] .calendar-day.split-pull {
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.14), transparent 40%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.09), transparent 32%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.04), transparent 30%),
     linear-gradient(145deg, color-mix(in srgb, var(--pull) 86%, white 10%), color-mix(in srgb, var(--pull) 78%, black 22%));
 }
 
 html[data-theme="dark"] .calendar-day.split-push {
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.14), transparent 40%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.09), transparent 32%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.04), transparent 30%),
     linear-gradient(145deg, color-mix(in srgb, var(--push) 86%, white 10%), color-mix(in srgb, var(--push) 78%, black 22%));
 }
 
 html[data-theme="dark"] .calendar-day.split-leg {
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.14), transparent 40%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.09), transparent 32%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.04), transparent 30%),
     linear-gradient(145deg, color-mix(in srgb, var(--leg) 86%, white 10%), color-mix(in srgb, var(--leg) 78%, black 22%));
 }
 
 html[data-theme="dark"] .calendar-day.split-cardio {
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.14), transparent 40%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.09), transparent 32%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.04), transparent 30%),
     linear-gradient(145deg, color-mix(in srgb, var(--cardio) 86%, white 10%), color-mix(in srgb, var(--cardio) 78%, black 22%));
 }
 
 html[data-theme="dark"] .calendar-day.has-cardio.split-pull {
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.14), transparent 40%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.085), transparent 32%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.04), transparent 30%),
     linear-gradient(
       145deg,
       color-mix(in srgb, var(--pull) 86%, white 8%) 0%,
@@ -989,7 +1084,8 @@ html[data-theme="dark"] .calendar-day.has-cardio.split-pull {
 
 html[data-theme="dark"] .calendar-day.has-cardio.split-push {
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.14), transparent 40%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.085), transparent 32%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.04), transparent 30%),
     linear-gradient(
       145deg,
       color-mix(in srgb, var(--push) 86%, white 8%) 0%,
@@ -1000,7 +1096,8 @@ html[data-theme="dark"] .calendar-day.has-cardio.split-push {
 
 html[data-theme="dark"] .calendar-day.has-cardio.split-leg {
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.14), transparent 40%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.085), transparent 32%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.04), transparent 30%),
     linear-gradient(
       145deg,
       color-mix(in srgb, var(--leg) 86%, white 8%) 0%,
@@ -1012,28 +1109,31 @@ html[data-theme="dark"] .calendar-day.has-cardio.split-leg {
 .calendar-day.is-workout:hover,
 .calendar-day.is-workout.is-following {
   transform:
-    translate3d(var(--day-pull-x), var(--day-pull-y), 14px)
+    translate3d(var(--day-pull-x), var(--day-pull-y), 8px)
     rotateX(var(--day-tilt-x))
     rotateY(var(--day-tilt-y));
   border-color: rgba(255, 255, 255, 0.5);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.38),
-    inset 0 -10px 18px rgba(5, 12, 24, 0.12),
-    0 16px 28px var(--workout-shadow);
+    inset 0 7px 12px rgba(255, 255, 255, 0.14),
+    inset 0 -8px 12px rgba(5, 12, 24, 0.14),
+    0 9px 15px var(--workout-shadow);
 }
 
 .calendar-day.is-workout.is-selected:hover,
 .calendar-day.is-workout.is-selected.is-following {
   box-shadow:
     0 0 0 2px color-mix(in srgb, var(--accent) 20%, transparent 80%),
-    inset 0 1px 0 rgba(255, 255, 255, 0.38),
-    inset 0 -10px 18px rgba(5, 12, 24, 0.12),
-    0 16px 28px var(--workout-shadow);
+    inset 0 7px 12px rgba(255, 255, 255, 0.14),
+    inset 0 -8px 12px rgba(5, 12, 24, 0.14),
+    0 9px 15px var(--workout-shadow);
 }
 
 .calendar-day-empty {
-  background: transparent;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 34%),
+    rgba(255, 255, 255, 0.018);
   border: 1px dashed color-mix(in srgb, var(--calendar-cell-line) 74%, transparent 26%);
+  box-shadow: inset 0 -6px 9px rgba(5, 12, 24, 0.055);
 }
 
 .calendar-day-number {
@@ -1054,8 +1154,8 @@ html[data-theme="dark"] .calendar-day.has-cardio.split-leg {
   max-width: 100%;
   padding: 4px 8px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.24);
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.04em;
@@ -1105,11 +1205,16 @@ html[data-theme="dark"] .calendar-day.has-cardio.split-leg {
   justify-content: center;
   border: 1px solid color-mix(in srgb, var(--muted) 22%, transparent 78%);
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.24), transparent 42%),
-    color-mix(in srgb, var(--panel-strong) 76%, transparent 24%);
+    linear-gradient(145deg, rgba(255, 255, 255, 0.16), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent),
+    color-mix(in srgb, var(--panel-strong) 58%, transparent 42%);
   color: var(--muted);
   font-weight: 800;
   letter-spacing: 0.02em;
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.035),
+    0 12px 26px rgba(5, 12, 24, 0.1);
 }
 
 .workout-split-button[aria-pressed="true"] {
@@ -1119,25 +1224,25 @@ html[data-theme="dark"] .calendar-day.has-cardio.split-leg {
 
 .workout-split-button[data-workout-type="PUSH"][aria-pressed="true"] {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 34%),
     linear-gradient(145deg, color-mix(in srgb, var(--push) 88%, white 10%), color-mix(in srgb, var(--push) 82%, black 18%));
 }
 
 .workout-split-button[data-workout-type="PULL"][aria-pressed="true"] {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 34%),
     linear-gradient(145deg, color-mix(in srgb, var(--pull) 88%, white 10%), color-mix(in srgb, var(--pull) 82%, black 18%));
 }
 
 .workout-split-button[data-workout-type="LEG"][aria-pressed="true"] {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 34%),
     linear-gradient(145deg, color-mix(in srgb, var(--leg) 88%, white 10%), color-mix(in srgb, var(--leg) 82%, black 18%));
 }
 
 .workout-split-button[data-workout-type="CARDIO"][aria-pressed="true"] {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 34%),
     linear-gradient(145deg, color-mix(in srgb, var(--cardio) 88%, white 10%), color-mix(in srgb, var(--cardio) 82%, black 18%));
 }
 
@@ -1189,25 +1294,29 @@ html[data-theme="dark"] .calendar-day.has-cardio.split-leg {
   padding: 16px;
   border-radius: 22px;
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.34), transparent 42%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.28), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), transparent),
     var(--panel-strong);
   border: 1px solid var(--line);
   box-shadow:
     inset 0 1px 0 var(--glass-highlight),
-    0 18px 42px rgba(54, 78, 109, 0.12);
-  -webkit-backdrop-filter: blur(22px) saturate(1.55);
-  backdrop-filter: blur(22px) saturate(1.55);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 18px 42px rgba(54, 78, 109, 0.1);
+  -webkit-backdrop-filter: blur(32px) saturate(1.6) brightness(1.01);
+  backdrop-filter: blur(32px) saturate(1.6) brightness(1.01);
   transform: translateZ(22px);
   transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
 }
 
 html[data-theme="dark"] .chart-card {
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.09), transparent 40%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.07), transparent 40%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent),
     var(--panel-strong);
   box-shadow:
     inset 0 1px 0 var(--glass-highlight),
-    0 18px 42px rgba(0, 0, 0, 0.24);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.035),
+    0 18px 42px rgba(0, 0, 0, 0.2);
 }
 
 .chart-card[aria-disabled="true"] {
@@ -1243,7 +1352,7 @@ html[data-theme="dark"] .chart-card {
   height: 12px;
   border-radius: 999px;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.46),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
     0 0 18px currentColor;
 }
 
@@ -1273,7 +1382,7 @@ canvas {
   display: block;
   border-radius: 16px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.04)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.02)),
     var(--canvas);
   border: 1px solid var(--line);
   box-shadow:
@@ -1289,7 +1398,7 @@ canvas {
   padding: 10px 12px;
   border-radius: 16px;
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.18), transparent 42%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.08), transparent 42%),
     rgba(17, 24, 39, 0.84);
   color: #f9fafb;
   border: 1px solid rgba(255, 255, 255, 0.22);
@@ -1305,7 +1414,7 @@ canvas {
 
 html[data-theme="dark"] .chart-tooltip {
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.2), transparent 42%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.08), transparent 42%),
     rgba(20, 30, 45, 0.9);
   color: #f7fbff;
   border-color: rgba(255, 255, 255, 0.18);
@@ -1447,7 +1556,7 @@ tbody tr:hover td {
   border-radius: 28px;
   border: 1px solid var(--line-strong);
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.42), transparent 38%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.22), transparent 38%),
     var(--panel);
   box-shadow:
     inset 0 1px 0 var(--glass-highlight),

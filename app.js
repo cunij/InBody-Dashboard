@@ -247,6 +247,9 @@ let modalChartState = createEmptyChartState("");
 let activeModalMetric = "";
 let modalHideTimer = 0;
 let heroSceneFrame = 0;
+let resizeFrame = 0;
+let workoutDayPointerFrame = 0;
+let pendingWorkoutDayPointer = null;
 
 bootstrap();
 
@@ -1046,10 +1049,36 @@ function handleWorkoutDayPointerMove(event) {
     return;
   }
 
-  const button = event.currentTarget;
+  pendingWorkoutDayPointer = {
+    button: event.currentTarget,
+    clientX: event.clientX,
+    clientY: event.clientY,
+  };
+
+  if (workoutDayPointerFrame) {
+    return;
+  }
+
+  workoutDayPointerFrame = requestAnimationFrame(applyWorkoutDayPointerMove);
+}
+
+function applyWorkoutDayPointerMove() {
+  workoutDayPointerFrame = 0;
+
+  if (!pendingWorkoutDayPointer) {
+    return;
+  }
+
+  const { button, clientX, clientY } = pendingWorkoutDayPointer;
+  pendingWorkoutDayPointer = null;
+
+  if (!button.isConnected) {
+    return;
+  }
+
   const rect = button.getBoundingClientRect();
-  const relativeX = (event.clientX - rect.left) / rect.width - 0.5;
-  const relativeY = (event.clientY - rect.top) / rect.height - 0.5;
+  const relativeX = (clientX - rect.left) / rect.width - 0.5;
+  const relativeY = (clientY - rect.top) / rect.height - 0.5;
   const pullX = clamp(relativeX * 6, -3, 3);
   const pullY = clamp(relativeY * 6, -3, 3);
   const tiltX = clamp(-relativeY * 7, -3.5, 3.5);
@@ -1064,6 +1093,9 @@ function handleWorkoutDayPointerMove(event) {
 
 function resetWorkoutDayDepth(event) {
   const button = event.currentTarget;
+  if (pendingWorkoutDayPointer?.button === button) {
+    pendingWorkoutDayPointer = null;
+  }
   button.classList.remove("is-following");
   button.style.removeProperty("--day-pull-x");
   button.style.removeProperty("--day-pull-y");
@@ -1932,9 +1964,14 @@ function getPreferredRoutineSplit() {
 }
 
 function renderCharts() {
+  const data = getSortedRecordsAsc();
+  const colors = getChartThemeColors();
+
   Object.entries(chartElements).forEach(([metricKey, elements]) => {
     hideTooltip(elements.tooltip);
     chartStates[metricKey] = drawMetricChart(elements.canvas, metricKey, {
+      data,
+      colors,
       curve: "smooth",
       showPoints: records.length <= 8,
       ratio: 0.52,
@@ -1982,10 +2019,19 @@ function drawMetricChart(canvas, metricKey, options = {}) {
     bottom: 28,
     left: 42,
   };
+  const scaledWidth = Math.floor(cssWidth * dpr);
+  const scaledHeight = Math.floor(cssHeight * dpr);
+  const nextStyleHeight = `${cssHeight}px`;
 
-  canvas.style.height = `${cssHeight}px`;
-  canvas.width = Math.floor(cssWidth * dpr);
-  canvas.height = Math.floor(cssHeight * dpr);
+  if (canvas.style.height !== nextStyleHeight) {
+    canvas.style.height = nextStyleHeight;
+  }
+  if (canvas.width !== scaledWidth) {
+    canvas.width = scaledWidth;
+  }
+  if (canvas.height !== scaledHeight) {
+    canvas.height = scaledHeight;
+  }
 
   context.setTransform(1, 0, 0, 1, 0, 0);
   context.clearRect(0, 0, canvas.width, canvas.height);
@@ -1993,19 +2039,14 @@ function drawMetricChart(canvas, metricKey, options = {}) {
 
   const width = cssWidth;
   const height = cssHeight;
-  const textColor = getComputedStyle(document.documentElement)
-    .getPropertyValue("--muted")
-    .trim();
-  const panelStrong = getComputedStyle(document.documentElement)
-    .getPropertyValue("--panel-strong")
-    .trim();
+  const colors = options.colors || getChartThemeColors();
   const showPoints = options.showPoints ?? true;
 
-  drawChartGrid(context, width, height, padding);
+  drawChartGrid(context, width, height, padding, colors.grid);
 
-  const data = [...records].sort(sortByDate);
+  const data = options.data || getSortedRecordsAsc();
   if (data.length === 0) {
-    context.fillStyle = textColor;
+    context.fillStyle = colors.text;
     context.font = '14px "SUIT", sans-serif';
     context.fillText("데이터가 없습니다.", 18, 30);
     return createEmptyChartState(metricKey);
@@ -2077,7 +2118,7 @@ function drawMetricChart(canvas, metricKey, options = {}) {
 
   if (showPoints) {
     points.forEach((point) => {
-      context.fillStyle = panelStrong;
+      context.fillStyle = colors.panelStrong;
       context.strokeStyle = metricConfig[metricKey].color;
       context.lineWidth = 2;
       context.beginPath();
@@ -2087,7 +2128,7 @@ function drawMetricChart(canvas, metricKey, options = {}) {
     });
   }
 
-  context.fillStyle = textColor;
+  context.fillStyle = colors.text;
   context.font = '12px "SUIT", sans-serif';
   context.textAlign = "left";
   context.fillText(
@@ -2130,10 +2171,20 @@ function drawMetricChart(canvas, metricKey, options = {}) {
   };
 }
 
-function drawChartGrid(context, width, height, padding) {
-  const gridColor = getComputedStyle(document.documentElement)
-    .getPropertyValue("--line")
-    .trim();
+function getSortedRecordsAsc() {
+  return [...records].sort(sortByDate);
+}
+
+function getChartThemeColors() {
+  const styles = getComputedStyle(document.documentElement);
+  return {
+    text: styles.getPropertyValue("--muted").trim(),
+    panelStrong: styles.getPropertyValue("--panel-strong").trim(),
+    grid: styles.getPropertyValue("--line").trim(),
+  };
+}
+
+function drawChartGrid(context, width, height, padding, gridColor) {
   const gridHeight = height - padding.top - padding.bottom;
 
   context.strokeStyle = gridColor;
@@ -2528,9 +2579,16 @@ function easeOutCubic(value) {
 }
 
 function handleWindowResize() {
-  syncHeroScrollScene();
-  renderWorkoutCalendar();
-  renderCharts();
+  if (resizeFrame) {
+    return;
+  }
+
+  resizeFrame = requestAnimationFrame(() => {
+    resizeFrame = 0;
+    syncHeroScrollScene();
+    renderWorkoutCalendar();
+    renderCharts();
+  });
 }
 
 async function generateAnalysis() {

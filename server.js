@@ -11,6 +11,9 @@ const publicFiles = new Map([
   ["/index.html", "index.html"],
   ["/styles.css", "styles.css"],
   ["/app.js", "app.js"],
+  ["/back.avif", "back.avif"],
+  ["/this.avif", "this.avif"],
+  ["/premium_photo-1672201106204-58e9af7a2888.avif", "premium_photo-1672201106204-58e9af7a2888.avif"],
 ]);
 const DEFAULT_MODEL = "gpt-5-mini";
 const MAIN_SPLITS = ["PUSH", "PULL", "LEG"];
@@ -95,7 +98,7 @@ const server = http.createServer(async (request, response) => {
     }
 
     if (request.method === "GET") {
-      return serveStatic(url.pathname, response);
+      return serveStatic(url.pathname, request, response);
     }
 
     return sendJson(response, 405, { error: "Method not allowed" });
@@ -677,19 +680,32 @@ function getTodayLocalDateString() {
   return `${year}-${month}-${day}`;
 }
 
-function serveStatic(pathname, response) {
+function serveStatic(pathname, request, response) {
   const fileName = publicFiles.get(pathname);
   if (!fileName) {
     return sendText(response, 404, "Not found", "text/plain; charset=utf-8");
   }
 
   const filePath = path.join(rootDir, fileName);
-  const file = fs.readFileSync(filePath);
-  return sendBinary(response, 200, file, contentType(fileName), {
-    "Cache-Control": "no-store, no-cache, must-revalidate",
-    Pragma: "no-cache",
-    Expires: "0",
+  const stats = fs.statSync(filePath);
+  const etag = `"${stats.size.toString(16)}-${Math.floor(stats.mtimeMs).toString(16)}"`;
+
+  if (request.headers["if-none-match"] === etag) {
+    response.writeHead(304, {
+      ETag: etag,
+      "Cache-Control": cacheControlFor(fileName),
+    });
+    response.end();
+    return;
+  }
+
+  response.writeHead(200, {
+    "Content-Type": contentType(fileName),
+    "Content-Length": stats.size,
+    "Cache-Control": cacheControlFor(fileName),
+    ETag: etag,
   });
+  fs.createReadStream(filePath).pipe(response);
 }
 
 function readJsonBody(request) {
@@ -1084,7 +1100,19 @@ function contentType(fileName) {
     return "application/javascript; charset=utf-8";
   }
 
+  if (fileName.endsWith(".avif")) {
+    return "image/avif";
+  }
+
   return "application/octet-stream";
+}
+
+function cacheControlFor(fileName) {
+  if (fileName.endsWith(".html")) {
+    return "no-cache";
+  }
+
+  return "public, max-age=0, must-revalidate";
 }
 
 function extractResponseText(payload) {
