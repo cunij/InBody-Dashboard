@@ -8,6 +8,8 @@ const DEFAULT_FAILURE_SET_RATIO = 70;
 const MAIN_WORKOUT_SPLITS = ["PULL", "PUSH", "LEG"];
 const WORKOUT_TYPES = ["PULL", "PUSH", "LEG", "CARDIO"];
 const WORKOUT_LOOKBACK_DAYS = 14;
+const CARDIO_DISTANCE_MAX_KM = 999.99;
+const HISTORY_PREVIEW_COUNT = 5;
 const EXERCISE_LIBRARY_BY_SPLIT = {
   PULL: [
     "랫풀다운",
@@ -107,6 +109,7 @@ const dateInput = document.getElementById("date");
 const datePickerButton = document.getElementById("date-picker-button");
 const datePickerProxy = document.getElementById("date-picker-proxy");
 const historyBody = document.getElementById("history-body");
+const historyToggleButton = document.getElementById("history-toggle");
 const latestSummary = document.getElementById("latest-summary");
 const appStatus = document.getElementById("app-status");
 const routineDisplay = document.getElementById("routine-display");
@@ -147,6 +150,8 @@ const selectedWorkoutDateLabel = document.getElementById(
 const workoutTypeButtons = Array.from(
   document.querySelectorAll("[data-workout-type]"),
 );
+const cardioDistanceRow = document.getElementById("cardio-distance-row");
+const cardioDistanceInput = document.getElementById("cardio-distance-km");
 const saveWorkoutButton = document.getElementById("save-workout");
 const deleteWorkoutButton = document.getElementById("delete-workout");
 const workoutEditorStatus = document.getElementById("workout-editor-status");
@@ -232,6 +237,7 @@ let currentCalendarDate = getMonthAnchor(selectedWorkoutDate);
 let routineDraftDate = "";
 let routineDraft = createRoutineDraft({ date: selectedWorkoutDate });
 let isRoutineSummaryCollapsed = false;
+let isHistoryExpanded = false;
 let chartStates = {
   weight: createEmptyChartState("weight"),
   bodyFat: createEmptyChartState("bodyFat"),
@@ -304,6 +310,9 @@ function bindEvents() {
   if (profileText) {
     profileText.addEventListener("input", () => setProfileStatus("edited"));
   }
+  if (historyToggleButton) {
+    historyToggleButton.addEventListener("click", toggleHistoryVisibility);
+  }
 
   calendarPrev.addEventListener("click", () => shiftCalendarMonth(-1));
   calendarNext.addEventListener("click", () => shiftCalendarMonth(1));
@@ -312,6 +321,9 @@ function bindEvents() {
       toggleWorkoutType(button.dataset.workoutType),
     );
   });
+  if (cardioDistanceInput) {
+    cardioDistanceInput.addEventListener("input", renderWorkoutEditorState);
+  }
   saveWorkoutButton.addEventListener("click", saveWorkoutEntry);
   deleteWorkoutButton.addEventListener("click", deleteWorkoutEntry);
 
@@ -529,7 +541,11 @@ function sanitizeWorkouts(raw) {
       typeof entry.split === "string" &&
       MAIN_WORKOUT_SPLITS.includes(entry.split)
     ) {
-      normalized[normalizedDate] = { mainSplit: entry.split, cardio: false };
+      normalized[normalizedDate] = {
+        mainSplit: entry.split,
+        cardio: false,
+        cardioDistanceKm: 0,
+      };
       return;
     }
 
@@ -539,12 +555,17 @@ function sanitizeWorkouts(raw) {
         ? entry.mainSplit
         : null;
     const cardio = Boolean(entry.cardio);
+    const cardioDistanceKm = cardio
+      ? normalizeCardioDistanceKm(
+          entry.cardioDistanceKm ?? entry.cardioKm ?? entry.distanceKm ?? entry.km,
+        )
+      : 0;
 
     if (!mainSplit && !cardio) {
       return;
     }
 
-    normalized[normalizedDate] = { mainSplit, cardio };
+    normalized[normalizedDate] = { mainSplit, cardio, cardioDistanceKm };
   });
 
   return normalized;
@@ -875,10 +896,19 @@ function renderHistoryTable() {
   if (sorted.length === 0) {
     historyBody.innerHTML =
       '<tr><td colspan="5" class="empty-row">저장된 기록이 없습니다.</td></tr>';
+    updateHistoryToggle(sorted.length);
     return;
   }
 
-  historyBody.innerHTML = sorted
+  if (sorted.length <= HISTORY_PREVIEW_COUNT) {
+    isHistoryExpanded = false;
+  }
+
+  const visibleRecords = isHistoryExpanded
+    ? sorted
+    : sorted.slice(0, HISTORY_PREVIEW_COUNT);
+
+  historyBody.innerHTML = visibleRecords
     .map(
       (record) => `
         <tr>
@@ -897,11 +927,37 @@ function renderHistoryTable() {
   historyBody.querySelectorAll("[data-id]").forEach((button) => {
     button.addEventListener("click", () => deleteRecord(button.dataset.id));
   });
+  updateHistoryToggle(sorted.length);
+}
+
+function toggleHistoryVisibility() {
+  isHistoryExpanded = !isHistoryExpanded;
+  renderHistoryTable();
+}
+
+function updateHistoryToggle(recordCount) {
+  if (!historyToggleButton) {
+    return;
+  }
+
+  const hiddenCount = Math.max(recordCount - HISTORY_PREVIEW_COUNT, 0);
+  if (hiddenCount === 0) {
+    isHistoryExpanded = false;
+  }
+
+  historyToggleButton.hidden = hiddenCount === 0;
+  historyToggleButton.textContent = isHistoryExpanded
+    ? "접기"
+    : `더보기 (${hiddenCount})`;
+  historyToggleButton.setAttribute(
+    "aria-expanded",
+    isHistoryExpanded ? "true" : "false",
+  );
 }
 
 function renderWorkoutSummary() {
-  const recent = getRecentWorkoutEntries(10);
-  workoutSummary.textContent = `최근 10일 중 ${recent.length}일 운동`;
+  const monthlyCardioKm = getMonthlyCardioDistanceKm(currentCalendarDate);
+  workoutSummary.textContent = `${currentCalendarDate.getMonth() + 1}월 러닝 ${formatCardioDistanceKm(monthlyCardioKm)}`;
 }
 
 function renderWorkoutCalendar() {
@@ -977,7 +1033,7 @@ function renderWorkoutEditor() {
   selectedWorkoutDateLabel.textContent = formatDate(selectedWorkoutDate);
   const entry = workouts[selectedWorkoutDate];
 
-  setWorkoutSelection(entry || { mainSplit: null, cardio: false });
+  setWorkoutSelection(entry || { mainSplit: null, cardio: false, cardioDistanceKm: 0 });
   renderWorkoutEditorState();
 }
 
@@ -1460,7 +1516,7 @@ async function saveWorkoutEntry() {
 async function deleteWorkoutEntry() {
   if (!workouts[selectedWorkoutDate]) {
     workoutEditorStatus.textContent = `${formatDate(selectedWorkoutDate)}에는 삭제할 운동 기록이 없습니다.`;
-    setWorkoutSelection({ mainSplit: null, cardio: false });
+    setWorkoutSelection({ mainSplit: null, cardio: false, cardioDistanceKm: 0 });
     renderWorkoutEditorState();
     return;
   }
@@ -1515,6 +1571,16 @@ function setWorkoutSelection(entry) {
       type === "CARDIO" ? Boolean(entry.cardio) : entry.mainSplit === type;
     button.setAttribute("aria-pressed", isPressed ? "true" : "false");
   });
+
+  const cardioSelected = Boolean(entry.cardio);
+  if (cardioDistanceRow) {
+    cardioDistanceRow.classList.toggle("is-disabled", !cardioSelected);
+  }
+  if (cardioDistanceInput) {
+    const distance = normalizeCardioDistanceKm(entry.cardioDistanceKm);
+    cardioDistanceInput.disabled = !cardioSelected;
+    cardioDistanceInput.value = cardioSelected && distance > 0 ? String(distance) : "";
+  }
 }
 
 function getSelectedWorkoutDraft() {
@@ -1532,7 +1598,11 @@ function getSelectedWorkoutDraft() {
       .find((button) => button.dataset.workoutType === "CARDIO")
       ?.getAttribute("aria-pressed") === "true";
 
-  return { mainSplit, cardio };
+  return {
+    mainSplit,
+    cardio,
+    cardioDistanceKm: cardio ? getCardioDistanceInputValue() : 0,
+  };
 }
 
 function getWorkoutDisplayLabel(entry) {
@@ -1543,7 +1613,10 @@ function getWorkoutDisplayLabel(entry) {
   }
 
   if (entry.cardio) {
-    parts.push("CARDIO");
+    const distance = normalizeCardioDistanceKm(entry.cardioDistanceKm);
+    parts.push(
+      distance > 0 ? `CARDIO ${formatCardioDistanceKm(distance)}` : "CARDIO",
+    );
   }
 
   return parts.join(" + ") || "휴식";
@@ -1555,7 +1628,10 @@ function getCalendarWorkoutLabel(entry) {
   }
 
   if (entry.mainSplit && entry.cardio) {
-    return `${entry.mainSplit}+C`;
+    const distance = normalizeCardioDistanceKm(entry.cardioDistanceKm);
+    return distance > 0
+      ? `${entry.mainSplit}+${formatCompactCardioDistanceKm(distance)}`
+      : `${entry.mainSplit}+C`;
   }
 
   if (entry.mainSplit) {
@@ -1563,7 +1639,8 @@ function getCalendarWorkoutLabel(entry) {
   }
 
   if (entry.cardio) {
-    return "CARDIO";
+    const distance = normalizeCardioDistanceKm(entry.cardioDistanceKm);
+    return distance > 0 ? formatCompactCardioDistanceKm(distance) : "CARDIO";
   }
 
   return "";
@@ -1572,8 +1649,63 @@ function getCalendarWorkoutLabel(entry) {
 function areWorkoutsEqual(left, right) {
   return (
     left?.mainSplit === right?.mainSplit &&
-    Boolean(left?.cardio) === Boolean(right?.cardio)
+    Boolean(left?.cardio) === Boolean(right?.cardio) &&
+    normalizeCardioDistanceKm(left?.cardioDistanceKm) ===
+      normalizeCardioDistanceKm(right?.cardioDistanceKm)
   );
+}
+
+function getCardioDistanceInputValue() {
+  if (!cardioDistanceInput) {
+    return 0;
+  }
+
+  return normalizeCardioDistanceKm(cardioDistanceInput.value);
+}
+
+function normalizeCardioDistanceKm(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) {
+    return 0;
+  }
+
+  const bounded = Math.min(numeric, CARDIO_DISTANCE_MAX_KM);
+  return Math.round(bounded * 100) / 100;
+}
+
+function formatCardioDistanceKm(value) {
+  const distance = normalizeCardioDistanceKm(value);
+  return `${distance.toLocaleString("ko-KR", {
+    maximumFractionDigits: 2,
+  })}km`;
+}
+
+function formatCompactCardioDistanceKm(value) {
+  const distance = normalizeCardioDistanceKm(value);
+  return `${distance.toLocaleString("ko-KR", {
+    maximumFractionDigits: 1,
+  })}km`;
+}
+
+function getMonthlyCardioDistanceKm(monthDate) {
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+
+  return Object.entries(workouts).reduce((total, [date, entry]) => {
+    if (!entry?.cardio) {
+      return total;
+    }
+
+    const workoutDate = parseDateString(date);
+    if (
+      workoutDate.getFullYear() !== year ||
+      workoutDate.getMonth() !== month
+    ) {
+      return total;
+    }
+
+    return total + normalizeCardioDistanceKm(entry.cardioDistanceKm);
+  }, 0);
 }
 
 function createRoutineDraft(source = {}) {
@@ -2602,6 +2734,7 @@ function getRecentWorkoutEntries(days, anchorDateString = getTodayLocalDate()) {
       date,
       mainSplit: entry.mainSplit,
       cardio: Boolean(entry.cardio),
+      cardioDistanceKm: normalizeCardioDistanceKm(entry.cardioDistanceKm),
       label: getWorkoutDisplayLabel(entry),
     }));
 }
@@ -2803,5 +2936,3 @@ function getTodayLocalDate() {
   const offset = today.getTimezoneOffset() * 60000;
   return new Date(today.getTime() - offset).toISOString().slice(0, 10);
 }
-
-

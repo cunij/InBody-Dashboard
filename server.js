@@ -14,6 +14,7 @@ const publicFiles = new Map([
 ]);
 const DEFAULT_MODEL = "gpt-5-mini";
 const MAIN_SPLITS = ["PUSH", "PULL", "LEG"];
+const CARDIO_DISTANCE_MAX_KM = 999.99;
 
 loadEnv(path.join(rootDir, ".env"));
 
@@ -125,7 +126,7 @@ async function handleData(response) {
        ORDER BY record_date ASC`
     ),
     db.query(
-      `SELECT workout_date, main_split, cardio
+      `SELECT workout_date, main_split, cardio, cardio_distance_km
        FROM workout_entries
        ORDER BY workout_date ASC`
     ),
@@ -147,6 +148,7 @@ async function handleData(response) {
     accumulator[row.workout_date] = {
       mainSplit: row.main_split || null,
       cardio: Boolean(row.cardio),
+      cardioDistanceKm: Number(row.cardio_distance_km || 0),
     };
     return accumulator;
   }, {});
@@ -255,15 +257,21 @@ async function handleSaveWorkout(request, response, dateString) {
   }
 
   const result = await db.query(
-    `INSERT INTO workout_entries (workout_date, main_split, cardio)
-     VALUES ($1, $2, $3)
+    `INSERT INTO workout_entries (workout_date, main_split, cardio, cardio_distance_km)
+     VALUES ($1, $2, $3, $4)
      ON CONFLICT (workout_date)
      DO UPDATE SET
        main_split = EXCLUDED.main_split,
        cardio = EXCLUDED.cardio,
+       cardio_distance_km = EXCLUDED.cardio_distance_km,
        updated_at = now()
-     RETURNING workout_date, main_split, cardio`,
-    [dateString, workout.mainSplit, workout.cardio]
+     RETURNING workout_date, main_split, cardio, cardio_distance_km`,
+    [
+      dateString,
+      workout.mainSplit,
+      workout.cardio,
+      workout.cardioDistanceKm,
+    ]
   );
 
   return sendJson(response, 200, {
@@ -519,7 +527,12 @@ function summarizeWorkouts(workouts) {
     }
   });
 
-  return `최근 ${workouts.length}회 운동, PUSH ${counts.PUSH}회 / PULL ${counts.PULL}회 / LEG ${counts.LEG}회 / CARDIO ${counts.CARDIO}회`;
+  const cardioDistanceKm = workouts.reduce(
+    (total, workout) => total + sanitizeCardioDistanceKm(workout.cardioDistanceKm),
+    0
+  );
+
+  return `최근 ${workouts.length}회 운동, PUSH ${counts.PUSH}회 / PULL ${counts.PULL}회 / LEG ${counts.LEG}회 / CARDIO ${counts.CARDIO}회 / 유산소 ${formatCardioDistanceKm(cardioDistanceKm)}`;
 }
 
 function formatWorkoutLabel(workout) {
@@ -530,7 +543,8 @@ function formatWorkoutLabel(workout) {
   }
 
   if (workout.cardio) {
-    parts.push("CARDIO");
+    const distance = sanitizeCardioDistanceKm(workout.cardioDistanceKm);
+    parts.push(distance > 0 ? `CARDIO ${formatCardioDistanceKm(distance)}` : "CARDIO");
   }
 
   return parts.join(" + ") || "운동 기록";
@@ -754,10 +768,45 @@ async function initializeDatabase(db) {
       workout_date date PRIMARY KEY,
       main_split text,
       cardio boolean NOT NULL DEFAULT false,
+      cardio_distance_km double precision NOT NULL DEFAULT 0,
       updated_at timestamptz NOT NULL DEFAULT now(),
       CONSTRAINT workout_entries_main_split_check
-        CHECK (main_split IS NULL OR main_split IN ('PUSH', 'PULL', 'LEG'))
+        CHECK (main_split IS NULL OR main_split IN ('PUSH', 'PULL', 'LEG')),
+      CONSTRAINT workout_entries_cardio_distance_check
+        CHECK (cardio_distance_km >= 0 AND cardio_distance_km <= 999.99)
     );
+  `);
+
+  await db.query(`
+    ALTER TABLE workout_entries
+    ADD COLUMN IF NOT EXISTS cardio_distance_km double precision;
+  `);
+
+  await db.query(`
+    UPDATE workout_entries
+    SET cardio_distance_km = 0
+    WHERE cardio_distance_km IS NULL;
+  `);
+
+  await db.query(`
+    ALTER TABLE workout_entries
+    ALTER COLUMN cardio_distance_km SET DEFAULT 0,
+    ALTER COLUMN cardio_distance_km SET NOT NULL;
+  `);
+
+  await db.query(`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'workout_entries_cardio_distance_check'
+      ) THEN
+        ALTER TABLE workout_entries
+        ADD CONSTRAINT workout_entries_cardio_distance_check
+        CHECK (cardio_distance_km >= 0 AND cardio_distance_km <= 999.99);
+      END IF;
+    END $$;
   `);
 
   await db.query(`
@@ -855,15 +904,41 @@ function sanitizeWorkoutInput(input) {
       ? input.mainSplit.toUpperCase()
       : null;
   const cardio = Boolean(input?.cardio);
+  const cardioDistanceKm = cardio
+    ? sanitizeCardioDistanceKm(
+        input?.cardioDistanceKm ??
+          input?.cardioKm ??
+          input?.distanceKm ??
+          input?.km
+      )
+    : 0;
 
-  if (!mainSplit && !cardio) {
+  if (cardioDistanceKm === null || (!mainSplit && !cardio)) {
     return null;
   }
 
   return {
     mainSplit,
     cardio,
+    cardioDistanceKm: cardio ? cardioDistanceKm : 0,
   };
+}
+
+function sanitizeCardioDistanceKm(value) {
+  if (value === null || value === undefined || value === "") {
+    return 0;
+  }
+
+  const numeric = Number(value);
+  if (
+    !Number.isFinite(numeric) ||
+    numeric < 0 ||
+    numeric > CARDIO_DISTANCE_MAX_KM
+  ) {
+    return null;
+  }
+
+  return Math.round(numeric * 100) / 100;
 }
 
 function sanitizeDailyRoutineInput(input) {
@@ -952,6 +1027,7 @@ function sanitizeAnalysisWorkout(input) {
     date: input.date,
     mainSplit: workout.mainSplit,
     cardio: workout.cardio,
+    cardioDistanceKm: workout.cardioDistanceKm,
   };
 }
 
@@ -971,7 +1047,15 @@ function formatWorkoutRow(row) {
     date: row.workout_date,
     mainSplit: row.main_split || null,
     cardio: Boolean(row.cardio),
+    cardioDistanceKm: Number(row.cardio_distance_km || 0),
   };
+}
+
+function formatCardioDistanceKm(value) {
+  const distance = sanitizeCardioDistanceKm(value);
+  return `${(distance || 0).toLocaleString("ko-KR", {
+    maximumFractionDigits: 2,
+  })}km`;
 }
 
 function formatDailyRoutineRow(row) {

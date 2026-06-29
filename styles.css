@@ -1097,6 +1097,37 @@ button:active {
   background: linear-gradient(135deg, color-mix(in srgb, var(--cardio) 94%, black 6%), color-mix(in srgb, var(--cardio) 74%, black 26%));
 }
 
+.cardio-distance-field {
+  margin-bottom: 16px;
+  transition: opacity 160ms ease;
+}
+
+.cardio-distance-field.is-disabled {
+  opacity: 0.55;
+}
+
+.cardio-distance-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.cardio-distance-control input {
+  min-width: 0;
+}
+
+.cardio-distance-control input:disabled {
+  cursor: not-allowed;
+}
+
+.cardio-distance-unit {
+  min-width: 36px;
+  text-align: center;
+  color: var(--muted);
+  font-weight: 800;
+}
+
 .calendar-editor-status {
   margin: 14px 0 0;
   color: var(--muted);
@@ -1233,6 +1264,16 @@ html[data-theme="dark"] .chart-tooltip {
 
 .table-wrap {
   overflow-x: auto;
+}
+
+.history-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.history-actions [hidden] {
+  display: none;
 }
 
 table {

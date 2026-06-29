@@ -61,6 +61,19 @@ function parseBooleanFlag(value) {
   throw new Error(`Invalid boolean flag: ${value}`);
 }
 
+function parseCardioDistanceKm(value) {
+  if (value === null || value === undefined || value === "") {
+    return 0;
+  }
+
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric < 0) {
+    throw new Error(`Invalid cardio distance: ${value}`);
+  }
+
+  return Math.round(numeric * 100) / 100;
+}
+
 function parseTimestampMs(value) {
   const timestamp = Date.parse(value);
   if (!Number.isFinite(timestamp)) {
@@ -79,7 +92,7 @@ function detectDatKind(filePath) {
   if (columnCount === 6) {
     return "records";
   }
-  if (columnCount === 4) {
+  if (columnCount === 4 || columnCount === 5) {
     return "workouts";
   }
 
@@ -108,14 +121,15 @@ function parseRecords(filePath) {
 function parseWorkouts(filePath) {
   return readDatLines(filePath).reduce((accumulator, line, index) => {
     const columns = line.split(/\t/u);
-    if (columns.length !== 4) {
+    if (columns.length !== 4 && columns.length !== 5) {
       throw new Error(`Unexpected workout column count on line ${index + 1} in ${filePath}`);
     }
 
-    const [date, mainSplit, cardio] = columns.map(parseNullable);
+    const [date, mainSplit, cardio, cardioDistanceKm] = columns.map(parseNullable);
     accumulator[date] = {
       mainSplit,
       cardio: parseBooleanFlag(cardio),
+      cardioDistanceKm: parseCardioDistanceKm(cardioDistanceKm),
     };
     return accumulator;
   }, {});
@@ -180,10 +194,24 @@ CREATE TABLE IF NOT EXISTS workout_entries (
   workout_date date PRIMARY KEY,
   main_split text,
   cardio boolean NOT NULL DEFAULT false,
+  cardio_distance_km double precision NOT NULL DEFAULT 0,
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT workout_entries_main_split_check
-    CHECK (main_split IS NULL OR main_split IN ('PUSH', 'PULL', 'LEG'))
+    CHECK (main_split IS NULL OR main_split IN ('PUSH', 'PULL', 'LEG')),
+  CONSTRAINT workout_entries_cardio_distance_check
+    CHECK (cardio_distance_km >= 0)
 );`.trim());
+  statements.push(`
+ALTER TABLE workout_entries
+ADD COLUMN IF NOT EXISTS cardio_distance_km double precision;`.trim());
+  statements.push(`
+UPDATE workout_entries
+SET cardio_distance_km = 0
+WHERE cardio_distance_km IS NULL;`.trim());
+  statements.push(`
+ALTER TABLE workout_entries
+ALTER COLUMN cardio_distance_km SET DEFAULT 0,
+ALTER COLUMN cardio_distance_km SET NOT NULL;`.trim());
   statements.push(`
 CREATE TABLE IF NOT EXISTS profile_store (
   key text PRIMARY KEY,
@@ -222,12 +250,13 @@ DO UPDATE SET
 
   for (const [date, workout] of Object.entries(backup.workouts)) {
     statements.push(`
-INSERT INTO workout_entries (workout_date, main_split, cardio)
-VALUES (${sqlString(date)}, ${sqlString(workout.mainSplit)}, ${workout.cardio ? "true" : "false"})
+INSERT INTO workout_entries (workout_date, main_split, cardio, cardio_distance_km)
+VALUES (${sqlString(date)}, ${sqlString(workout.mainSplit)}, ${workout.cardio ? "true" : "false"}, ${parseCardioDistanceKm(workout.cardioDistanceKm)})
 ON CONFLICT (workout_date)
 DO UPDATE SET
   main_split = EXCLUDED.main_split,
   cardio = EXCLUDED.cardio,
+  cardio_distance_km = EXCLUDED.cardio_distance_km,
   updated_at = now();
 `.trim());
   }
@@ -262,10 +291,27 @@ async function importBackup(databaseUrl, backup) {
         workout_date date PRIMARY KEY,
         main_split text,
         cardio boolean NOT NULL DEFAULT false,
+        cardio_distance_km double precision NOT NULL DEFAULT 0,
         updated_at timestamptz NOT NULL DEFAULT now(),
         CONSTRAINT workout_entries_main_split_check
-          CHECK (main_split IS NULL OR main_split IN ('PUSH', 'PULL', 'LEG'))
+          CHECK (main_split IS NULL OR main_split IN ('PUSH', 'PULL', 'LEG')),
+        CONSTRAINT workout_entries_cardio_distance_check
+          CHECK (cardio_distance_km >= 0)
       );
+    `);
+    await client.query(`
+      ALTER TABLE workout_entries
+      ADD COLUMN IF NOT EXISTS cardio_distance_km double precision;
+    `);
+    await client.query(`
+      UPDATE workout_entries
+      SET cardio_distance_km = 0
+      WHERE cardio_distance_km IS NULL;
+    `);
+    await client.query(`
+      ALTER TABLE workout_entries
+      ALTER COLUMN cardio_distance_km SET DEFAULT 0,
+      ALTER COLUMN cardio_distance_km SET NOT NULL;
     `);
     await client.query(`
       CREATE TABLE IF NOT EXISTS profile_store (
@@ -311,15 +357,21 @@ async function importBackup(databaseUrl, backup) {
     for (const [date, workout] of Object.entries(backup.workouts)) {
       await client.query(
         `
-        INSERT INTO workout_entries (workout_date, main_split, cardio)
-        VALUES ($1, $2, $3)
+        INSERT INTO workout_entries (workout_date, main_split, cardio, cardio_distance_km)
+        VALUES ($1, $2, $3, $4)
         ON CONFLICT (workout_date)
         DO UPDATE SET
           main_split = EXCLUDED.main_split,
           cardio = EXCLUDED.cardio,
+          cardio_distance_km = EXCLUDED.cardio_distance_km,
           updated_at = now()
         `,
-        [date, workout.mainSplit, workout.cardio]
+        [
+          date,
+          workout.mainSplit,
+          workout.cardio,
+          parseCardioDistanceKm(workout.cardioDistanceKm),
+        ]
       );
     }
 

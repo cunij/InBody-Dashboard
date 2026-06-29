@@ -28,7 +28,7 @@
               <h2>운동 캘린더</h2>
             </div>
             <div id="workout-summary" class="calendar-summary">
-              최근 7일 0일 운동
+              이번 달 러닝 0km
             </div>
           </div>
 
@@ -109,6 +109,23 @@
                   CARDIO
                 </button>
               </div>
+
+              <label id="cardio-distance-row" class="cardio-distance-field">
+                <span>CARDIO 거리</span>
+                <span class="cardio-distance-control">
+                  <input
+                    type="number"
+                    id="cardio-distance-km"
+                    min="0"
+                    max="999.99"
+                    step="0.1"
+                    inputmode="decimal"
+                    placeholder="0.0"
+                    disabled
+                  />
+                  <span class="cardio-distance-unit">km</span>
+                </span>
+              </label>
 
               <div class="form-actions">
                 <button type="button" id="save-workout" class="primary">
@@ -298,6 +315,11 @@
               </tr>
             </tbody>
           </table>
+        </div>
+        <div class="history-actions">
+          <button type="button" id="history-toggle" class="ghost" hidden>
+            더보기
+          </button>
         </div>
       </section>
       </section>
