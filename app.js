@@ -270,9 +270,10 @@ function bindEvents() {
   if (datePickerProxy) {
     datePickerProxy.addEventListener("change", syncDateFromPicker);
   }
-  document
-    .getElementById("reset-storage")
-    .addEventListener("click", resetStorage);
+  const resetStorageButton = document.getElementById("reset-storage");
+  if (resetStorageButton) {
+    resetStorageButton.addEventListener("click", resetStorage);
+  }
   themeToggle.addEventListener("click", toggleTheme);
   routineSplitButtons.forEach((button) => {
     button.addEventListener("click", () =>
@@ -322,7 +323,7 @@ function bindEvents() {
     );
   });
   if (cardioDistanceInput) {
-    cardioDistanceInput.addEventListener("input", renderWorkoutEditorState);
+    cardioDistanceInput.addEventListener("input", renderWorkoutDraftPreview);
   }
   saveWorkoutButton.addEventListener("click", saveWorkoutEntry);
   deleteWorkoutButton.addEventListener("click", deleteWorkoutEntry);
@@ -687,7 +688,7 @@ function applySavedTheme() {
 
 function applyTheme(theme) {
   document.documentElement.dataset.theme = theme;
-  themeToggle.textContent = theme === "dark" ? "화이트 모드" : "다크 모드";
+  themeToggle.textContent = theme === "dark" ? "라이트 모드" : "다크 모드";
 }
 
 function toggleTheme() {
@@ -854,8 +855,8 @@ function renderAll() {
   renderLatestSummary();
   renderHistoryTable();
   renderWorkoutSummary();
-  renderWorkoutCalendar();
   renderWorkoutEditor();
+  renderWorkoutCalendar();
   renderRoutinePanel();
   renderCharts();
 }
@@ -917,7 +918,7 @@ function renderHistoryTable() {
           <td>${record.bodyFat.toFixed(1)}%</td>
           <td>${record.muscle.toFixed(1)}kg</td>
           <td>
-            <button type="button" class="ghost delete-row" data-id="${record.id}">삭제</button>
+            <button type="button" class="ghost danger-ghost delete-row" data-id="${record.id}">삭제</button>
           </td>
         </tr>
       `,
@@ -979,7 +980,7 @@ function renderWorkoutCalendar() {
     }
 
     const dateString = toDateString(new Date(year, month, dayNumber));
-    const entry = workouts[dateString];
+    const entry = getCalendarDisplayEntry(dateString);
     const classes = ["calendar-day"];
 
     if (dateString === selectedWorkoutDate) {
@@ -1006,8 +1007,13 @@ function renderWorkoutCalendar() {
       }
     }
 
-    const label = entry
-      ? `<span class="calendar-day-label">${getCalendarWorkoutLabel(entry)}</span>`
+    const fullLabel = entry ? getCalendarWorkoutLabel(entry, "full") : "";
+    const compactLabel = entry ? getCalendarWorkoutLabel(entry, "compact") : "";
+    const label = fullLabel
+      ? `<span class="calendar-day-label${compactLabel ? "" : " is-compact-empty"}">
+          <span class="calendar-day-label-full">${fullLabel}</span>
+          <span class="calendar-day-label-compact">${compactLabel}</span>
+        </span>`
       : "";
     const ariaLabel = entry
       ? `${formatDate(dateString)}, 운동함, ${getWorkoutDisplayLabel(entry)}`
@@ -1063,6 +1069,15 @@ function resetWorkoutDayDepth(event) {
   button.style.removeProperty("--day-pull-y");
   button.style.removeProperty("--day-tilt-x");
   button.style.removeProperty("--day-tilt-y");
+}
+
+function getCalendarDisplayEntry(dateString) {
+  if (dateString !== selectedWorkoutDate) {
+    return workouts[dateString] || null;
+  }
+
+  const draft = getSelectedWorkoutDraft();
+  return draft.mainSplit || draft.cardio ? draft : null;
 }
 
 function renderWorkoutEditor() {
@@ -1473,8 +1488,8 @@ async function deleteDailyRoutine() {
 function selectWorkoutDate(dateString) {
   selectedWorkoutDate = dateString;
   currentCalendarDate = getMonthAnchor(dateString);
-  renderWorkoutCalendar();
   renderWorkoutEditor();
+  renderWorkoutCalendar();
   renderRoutinePanel();
 }
 
@@ -1486,8 +1501,8 @@ function shiftCalendarMonth(offset) {
   );
   selectedWorkoutDate = toDateString(currentCalendarDate);
   renderWorkoutSummary();
-  renderWorkoutCalendar();
   renderWorkoutEditor();
+  renderWorkoutCalendar();
   renderRoutinePanel();
 }
 
@@ -1503,9 +1518,9 @@ async function saveWorkoutEntry() {
         },
       );
       delete workouts[selectedWorkoutDate];
+      renderWorkoutEditor();
       renderWorkoutSummary();
       renderWorkoutCalendar();
-      renderWorkoutEditor();
       appStatus.textContent = `${formatDate(selectedWorkoutDate)}을 운동하지 않은 날로 저장했습니다.`;
     } catch (error) {
       appStatus.textContent = `운동 기록 저장 실패: ${error.message}`;
@@ -1530,11 +1545,12 @@ async function saveWorkoutEntry() {
         body: JSON.stringify(selected),
       },
     );
-    workouts[selectedWorkoutDate] = payload.workout;
+    const savedWorkout = normalizeSavedWorkout(payload.workout, selected);
+    workouts[selectedWorkoutDate] = savedWorkout;
+    renderWorkoutEditor();
     renderWorkoutSummary();
     renderWorkoutCalendar();
-    renderWorkoutEditor();
-    appStatus.textContent = `${formatDate(selectedWorkoutDate)} ${getWorkoutDisplayLabel(payload.workout)} 운동 기록을 저장했습니다.`;
+    appStatus.textContent = `${formatDate(selectedWorkoutDate)} ${getWorkoutDisplayLabel(savedWorkout)} 운동 기록을 저장했습니다.`;
   } catch (error) {
     appStatus.textContent = `운동 기록 저장 실패: ${error.message}`;
     console.error(error);
@@ -1565,9 +1581,9 @@ async function deleteWorkoutEntry() {
       },
     );
     delete workouts[selectedWorkoutDate];
+    renderWorkoutEditor();
     renderWorkoutSummary();
     renderWorkoutCalendar();
-    renderWorkoutEditor();
     appStatus.textContent = `${formatDate(selectedWorkoutDate)} 운동 기록을 삭제했습니다.`;
   } catch (error) {
     appStatus.textContent = `운동 기록 삭제 실패: ${error.message}`;
@@ -1597,7 +1613,38 @@ function toggleWorkoutType(type) {
   }
 
   setWorkoutSelection(selected);
+  renderWorkoutDraftPreview();
+}
+
+function renderWorkoutDraftPreview() {
   renderWorkoutEditorState();
+  renderWorkoutCalendar();
+}
+
+function normalizeSavedWorkout(savedWorkout, fallbackWorkout) {
+  const fallbackDistance = normalizeCardioDistanceKm(
+    fallbackWorkout?.cardioDistanceKm,
+  );
+  const savedDistance = normalizeCardioDistanceKm(
+    savedWorkout?.cardioDistanceKm ??
+      savedWorkout?.cardioKm ??
+      savedWorkout?.distanceKm ??
+      savedWorkout?.km,
+  );
+  const cardio = Boolean(savedWorkout?.cardio ?? fallbackWorkout?.cardio);
+
+  return {
+    mainSplit:
+      typeof savedWorkout?.mainSplit === "string"
+        ? savedWorkout.mainSplit
+        : fallbackWorkout?.mainSplit || null,
+    cardio,
+    cardioDistanceKm: cardio
+      ? savedDistance > 0 || fallbackDistance === 0
+        ? savedDistance
+        : fallbackDistance
+      : 0,
+  };
 }
 
 function setWorkoutSelection(entry) {
@@ -1658,25 +1705,38 @@ function getWorkoutDisplayLabel(entry) {
   return parts.join(" + ") || "휴식";
 }
 
-function getCalendarWorkoutLabel(entry) {
+function getCalendarWorkoutLabel(entry, mode = "full") {
   if (!entry) {
     return "";
   }
 
+  const splitLabel =
+    mode === "compact" ? getCompactSplitLabel(entry.mainSplit) : entry.mainSplit;
+
   if (entry.mainSplit && entry.cardio) {
     const distance = normalizeCardioDistanceKm(entry.cardioDistanceKm);
-    return distance > 0
-      ? `${entry.mainSplit}+${formatCompactCardioDistanceKm(distance)}`
-      : `${entry.mainSplit}+C`;
+    return `${splitLabel}+${formatCalendarCardioDistance(distance, mode)}`;
   }
 
   if (entry.mainSplit) {
-    return entry.mainSplit;
+    return splitLabel;
   }
 
   if (entry.cardio) {
     const distance = normalizeCardioDistanceKm(entry.cardioDistanceKm);
-    return distance > 0 ? formatCompactCardioDistanceKm(distance) : "CARDIO";
+    return formatCalendarCardioDistance(distance, mode);
+  }
+
+  return "";
+}
+
+function getCompactSplitLabel(split) {
+  if (split === "LEG") {
+    return "L";
+  }
+
+  if (split === "PUSH" || split === "PULL") {
+    return "P";
   }
 
   return "";
@@ -1716,11 +1776,12 @@ function formatCardioDistanceKm(value) {
   })}km`;
 }
 
-function formatCompactCardioDistanceKm(value) {
+function formatCalendarCardioDistance(value, mode) {
   const distance = normalizeCardioDistanceKm(value);
-  return `${distance.toLocaleString("ko-KR", {
+  const formatted = distance.toLocaleString("ko-KR", {
     maximumFractionDigits: 1,
-  })}km`;
+  });
+  return mode === "compact" ? formatted : `${formatted}km`;
 }
 
 function getMonthlyCardioDistanceKm(monthDate) {

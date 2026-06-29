@@ -3,20 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>InBody Dashboard</title>
+    <title>Body Tracker</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=SUIT:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./styles.css?v=20260629" />
   </head>
   <body>
     <div class="page-shell">
       <div class="hero-stack" id="hero-stack">
         <header class="topbar hero-title">
-          <h1>InBody Dashboard</h1>
+          <h1>Body Tracker</h1>
           <button type="button" id="theme-toggle" class="theme-toggle">
             다크 모드
           </button>
@@ -25,7 +25,7 @@
         <section class="panel calendar-panel hero-calendar">
           <div class="panel-head panel-head-inline">
             <div>
-              <h2>운동 캘린더</h2>
+              <h2>캘린더</h2>
             </div>
             <div id="workout-summary" class="calendar-summary">
               이번 달 러닝 0km
@@ -131,7 +131,7 @@
                 <button type="button" id="save-workout" class="primary">
                   운동 저장
                 </button>
-                <button type="button" id="delete-workout" class="ghost">
+                <button type="button" id="delete-workout" class="ghost danger-ghost">
                   기록 삭제
                 </button>
               </div>
@@ -153,7 +153,7 @@
 
       <section class="panel chart-panel">
         <div class="panel-head">
-          <h2>변화 그래프</h2>
+          <h2>변화</h2>
         </div>
 
         <div class="charts">
@@ -287,9 +287,6 @@
             </label>
             <div class="form-actions">
               <button type="submit" class="primary">저장</button>
-              <button type="button" id="reset-storage" class="ghost">
-                전체 삭제
-              </button>
             </div>
           </form>
         </section>
@@ -306,7 +303,7 @@
                 <th>체중</th>
                 <th>체지방률</th>
                 <th>골격근량</th>
-                <th>관리</th>
+                <th></th>
               </tr>
             </thead>
             <tbody id="history-body">
@@ -354,6 +351,6 @@
       </section>
     </div>
 
-    <script src="./app.js"></script>
+    <script src="./app.js?v=20260629"></script>
   </body>
 </html>
