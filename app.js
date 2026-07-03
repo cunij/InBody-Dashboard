@@ -10,6 +10,10 @@ const WORKOUT_TYPES = ["PULL", "PUSH", "LEG", "CARDIO"];
 const WORKOUT_LOOKBACK_DAYS = 14;
 const CARDIO_DISTANCE_MAX_KM = 999.99;
 const HISTORY_PREVIEW_COUNT = 5;
+const DATE_PROGRESS_START_DATE = new Date(2026, 0, 1);
+const DATE_PROGRESS_END_DATE = new Date(2028, 0, 1);
+const CHART_MAX_RENDER_POINTS = 120;
+const ENABLE_WORKOUT_DAY_DEPTH_EFFECT = false;
 const EXERCISE_LIBRARY_BY_SPLIT = {
   PULL: [
     "랫풀다운",
@@ -140,6 +144,9 @@ const toggleProfileEditorButton = document.getElementById(
 const saveProfileButton = document.getElementById("save-profile");
 
 const workoutSummary = document.getElementById("workout-summary");
+const dateProgress = document.getElementById("date-progress");
+const dateProgressFill = document.getElementById("date-progress-fill");
+const dateProgressPercent = document.getElementById("date-progress-percent");
 const calendarMonth = document.getElementById("calendar-month");
 const calendarGrid = document.getElementById("calendar-grid");
 const calendarPrev = document.getElementById("calendar-prev");
@@ -238,6 +245,11 @@ let routineDraftDate = "";
 let routineDraft = createRoutineDraft({ date: selectedWorkoutDate });
 let isRoutineSummaryCollapsed = false;
 let isHistoryExpanded = false;
+let sortedRecordCache = {
+  source: null,
+  asc: [],
+  desc: [],
+};
 let chartStates = {
   weight: createEmptyChartState("weight"),
   bodyFat: createEmptyChartState("bodyFat"),
@@ -858,6 +870,7 @@ function renderAll() {
   renderLatestSummary();
   renderHistoryTable();
   renderWorkoutSummary();
+  renderDateProgress();
   renderWorkoutEditor();
   renderWorkoutCalendar();
   renderRoutinePanel();
@@ -964,6 +977,19 @@ function renderWorkoutSummary() {
   workoutSummary.textContent = `${currentCalendarDate.getMonth() + 1}월 러닝 ${formatCardioDistanceKm(monthlyCardioKm)}`;
 }
 
+function renderDateProgress() {
+  if (!dateProgress || !dateProgressFill || !dateProgressPercent) {
+    return;
+  }
+
+  const progress = getDateProgressPercent(getTodayDateAtMidnight());
+  const progressText = `${progress.toFixed(2)}%`;
+
+  dateProgressFill.style.width = progressText;
+  dateProgressPercent.textContent = progressText;
+  dateProgress.setAttribute("aria-valuenow", progress.toFixed(2));
+}
+
 function renderWorkoutCalendar() {
   calendarMonth.textContent = formatMonthLabel(currentCalendarDate);
 
@@ -1035,7 +1061,10 @@ function renderWorkoutCalendar() {
     button.addEventListener("click", () =>
       selectWorkoutDate(button.dataset.date),
     );
-    if (button.classList.contains("is-workout")) {
+    if (
+      ENABLE_WORKOUT_DAY_DEPTH_EFFECT &&
+      button.classList.contains("is-workout")
+    ) {
       button.addEventListener("pointermove", handleWorkoutDayPointerMove);
       button.addEventListener("pointerleave", resetWorkoutDayDepth);
       button.addEventListener("pointercancel", resetWorkoutDayDepth);
@@ -1964,7 +1993,8 @@ function getPreferredRoutineSplit() {
 }
 
 function renderCharts() {
-  const data = getSortedRecordsAsc();
+  const fullData = getSortedRecordsAsc();
+  const data = getChartRenderData(fullData);
   const colors = getChartThemeColors();
 
   Object.entries(chartElements).forEach(([metricKey, elements]) => {
@@ -2172,7 +2202,31 @@ function drawMetricChart(canvas, metricKey, options = {}) {
 }
 
 function getSortedRecordsAsc() {
-  return [...records].sort(sortByDate);
+  return getSortedRecordCache().asc;
+}
+
+function getChartRenderData(data) {
+  if (data.length <= CHART_MAX_RENDER_POINTS) {
+    return data;
+  }
+
+  const lastIndex = data.length - 1;
+  const step = lastIndex / (CHART_MAX_RENDER_POINTS - 1);
+  const sampled = [];
+  let previousIndex = -1;
+
+  for (let index = 0; index < CHART_MAX_RENDER_POINTS; index += 1) {
+    const dataIndex =
+      index === CHART_MAX_RENDER_POINTS - 1
+        ? lastIndex
+        : Math.round(index * step);
+    if (dataIndex !== previousIndex) {
+      sampled.push(data[dataIndex]);
+      previousIndex = dataIndex;
+    }
+  }
+
+  return sampled;
 }
 
 function getChartThemeColors() {
@@ -2679,9 +2733,9 @@ function buildTrendSummaryForRecords(sortedRecords) {
 }
 
 function getSelectedAnalysisContext() {
-  const analysisRecords = [...records]
-    .sort(sortByDate)
-    .filter((record) => record.date <= selectedWorkoutDate);
+  const analysisRecords = getSortedRecordsAsc().filter(
+    (record) => record.date <= selectedWorkoutDate,
+  );
   if (!analysisRecords.length) {
     return null;
   }
@@ -2707,9 +2761,9 @@ function buildLocalEvaluation({
   errorMessage = "",
   userQuery = "",
 }) {
-  const data = [...records]
-    .sort(sortByDate)
-    .filter((record) => record.date <= analysisDate);
+  const data = getSortedRecordsAsc().filter(
+    (record) => record.date <= analysisDate,
+  );
   const previous = data[data.length - 2];
   const lines = [];
   const usesPreviousRecord = latest.date !== analysisDate;
@@ -3102,8 +3156,21 @@ function sortByDate(a, b) {
   return a.date.localeCompare(b.date);
 }
 
+function getSortedRecordCache() {
+  if (sortedRecordCache.source !== records) {
+    const asc = [...records].sort(sortByDate);
+    sortedRecordCache = {
+      source: records,
+      asc,
+      desc: [...asc].reverse(),
+    };
+  }
+
+  return sortedRecordCache;
+}
+
 function getSortedRecordsDesc() {
-  return [...records].sort((a, b) => b.date.localeCompare(a.date));
+  return getSortedRecordCache().desc;
 }
 
 function formatDate(dateString) {
@@ -3123,4 +3190,18 @@ function getTodayLocalDate() {
   const today = new Date();
   const offset = today.getTimezoneOffset() * 60000;
   return new Date(today.getTime() - offset).toISOString().slice(0, 10);
+}
+
+function getTodayDateAtMidnight() {
+  return parseDateString(getTodayLocalDate());
+}
+
+function getDateProgressPercent(date) {
+  const startTime = DATE_PROGRESS_START_DATE.getTime();
+  const endTime = DATE_PROGRESS_END_DATE.getTime();
+  const currentTime = date.getTime();
+  const elapsed = currentTime - startTime;
+  const total = endTime - startTime;
+
+  return clamp((elapsed / total) * 100, 0, 100);
 }

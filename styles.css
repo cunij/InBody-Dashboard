@@ -1,5 +1,6 @@
 :root {
   --page-background-image: url("./this.avif");
+  --glass-surface-image: url("./glass-surface-light.webp");
   --bg: #eef5fb;
   --bg-deep: #dbe8f4;
   --bg-layer: rgba(255, 255, 255, 0.24);
@@ -31,6 +32,7 @@
 }
 
 html[data-theme="dark"] {
+  --glass-surface-image: url("./glass-surface-dark.webp");
   --bg: #0f1520;
   --bg-deep: #070b12;
   --bg-layer: rgba(19, 29, 45, 0.32);
@@ -775,6 +777,63 @@ html[data-theme="dark"] .danger-ghost {
   box-shadow: inset 0 1px 0 var(--glass-highlight);
 }
 
+.date-progress {
+  margin: -2px 0 18px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.14), transparent),
+    color-mix(in srgb, var(--panel-strong) 86%, transparent 14%);
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    0 14px 28px rgba(54, 78, 109, 0.08);
+}
+
+.date-progress-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.date-progress-meta strong {
+  color: var(--text);
+  font-size: 1.02rem;
+  white-space: nowrap;
+}
+
+.date-progress-track {
+  position: relative;
+  height: 14px;
+  overflow: hidden;
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent),
+    color-mix(in srgb, var(--muted) 16%, transparent 84%);
+  box-shadow:
+    inset 0 1px 3px rgba(20, 32, 52, 0.16),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.date-progress-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0%;
+  border-radius: inherit;
+  background:
+    linear-gradient(90deg, var(--accent-strong), var(--cardio)),
+    var(--accent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    0 0 18px color-mix(in srgb, var(--accent) 34%, transparent 66%);
+  transition: width 420ms ease;
+}
+
 .calendar-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.8fr) minmax(240px, 320px);
@@ -800,7 +859,17 @@ html[data-theme="dark"] .danger-ghost {
 }
 
 .calendar-nav {
-  padding: 10px 14px;
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  font-size: 1.55rem;
+  line-height: 1;
+}
+
+.calendar-nav span {
+  transform: translateY(-1px);
 }
 
 .calendar-weekdays,
@@ -1648,6 +1717,125 @@ tbody tr:hover td {
   }
 }
 
+/* Fake the glass look with a pre-rendered surface image instead of live backdrop blur. */
+body,
+html[data-theme="dark"] body {
+  background-attachment: scroll;
+}
+
+.panel,
+.calendar-board,
+.calendar-editor,
+.chart-card {
+  contain: layout paint;
+}
+
+.theme-toggle,
+.panel,
+input,
+select,
+textarea,
+.calendar-board,
+.calendar-editor,
+.chart-card,
+.chart-tooltip,
+.chart-modal-panel {
+  background-image:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.08) 36%, rgba(255, 255, 255, 0.16)),
+    var(--glass-surface-image);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  background-position: center;
+}
+
+html[data-theme="dark"] .theme-toggle,
+html[data-theme="dark"] .panel,
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea,
+html[data-theme="dark"] .calendar-board,
+html[data-theme="dark"] .calendar-editor,
+html[data-theme="dark"] .chart-card,
+html[data-theme="dark"] .chart-tooltip,
+html[data-theme="dark"] .chart-modal-panel {
+  background-image:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.07), rgba(5, 12, 24, 0.24) 42%, rgba(255, 255, 255, 0.035)),
+    var(--glass-surface-image);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  background-position: center;
+}
+
+.theme-toggle,
+.panel,
+input,
+select,
+textarea,
+.calendar-board,
+.calendar-editor,
+button,
+.calendar-day,
+.chart-card,
+.chart-modal-backdrop,
+.chart-modal-panel {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.panel:hover {
+  transform: none;
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1),
+    inset 0 -20px 40px rgba(255, 255, 255, 0.06),
+    var(--shadow-soft);
+}
+
+html[data-theme="dark"] .panel:hover {
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    inset 0 -16px 34px rgba(255, 255, 255, 0.04),
+    var(--shadow-soft);
+}
+
+.calendar-grid {
+  perspective: none;
+}
+
+.calendar-day:not(.is-workout) {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.78), rgba(244, 243, 255, 0.66) 46%, rgba(232, 246, 252, 0.72)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0.12));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    inset 0 -10px 18px rgba(128, 142, 186, 0.055),
+    0 6px 12px rgba(91, 109, 150, 0.08);
+}
+
+html[data-theme="dark"] .calendar-day:not(.is-workout) {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.055), rgba(31, 38, 61, 0.54) 48%, rgba(17, 30, 45, 0.62)),
+    color-mix(in srgb, var(--panel-strong) 58%, transparent 42%);
+}
+
+.calendar-day:not(.is-workout)::after {
+  opacity: 0.08;
+}
+
+.calendar-day,
+.calendar-day.is-workout,
+.chart-card {
+  transform: none;
+  transform-style: flat;
+}
+
+.calendar-day:hover,
+.calendar-day.is-workout:hover,
+.calendar-day.is-workout.is-following {
+  transform: none;
+  filter: none;
+}
+
 @media (max-width: 720px) {
   .page-shell {
     width: min(100% - 24px, 1000px);
@@ -1699,6 +1887,16 @@ tbody tr:hover td {
   .calendar-board,
   .calendar-editor {
     padding: 12px;
+  }
+
+  .date-progress {
+    padding: 12px;
+  }
+
+  .date-progress-meta {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
   }
 
   .calendar-grid {

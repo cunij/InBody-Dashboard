@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=SUIT:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260629" />
+    <link rel="stylesheet" href="./styles.css?v=20260703" />
   </head>
   <body>
     <div class="page-shell">
@@ -32,6 +32,24 @@
             </div>
           </div>
 
+          <div
+            id="date-progress"
+            class="date-progress"
+            role="progressbar"
+            aria-label="2026년 1월 1일부터 2028년 1월 1일까지 지난 비율"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow="0"
+          >
+            <div class="date-progress-meta">
+              <span>2026.1.1 - 2028.1.1</span>
+              <strong id="date-progress-percent">0%</strong>
+            </div>
+            <div class="date-progress-track" aria-hidden="true">
+              <span id="date-progress-fill" class="date-progress-fill"></span>
+            </div>
+          </div>
+
           <div class="calendar-layout">
             <div class="calendar-board">
               <div class="calendar-toolbar">
@@ -39,16 +57,20 @@
                   type="button"
                   id="calendar-prev"
                   class="ghost calendar-nav"
+                  aria-label="이전 달"
+                  title="이전 달"
                 >
-                  이전
+                  <span aria-hidden="true">‹</span>
                 </button>
                 <strong id="calendar-month">2026년 3월</strong>
                 <button
                   type="button"
                   id="calendar-next"
                   class="ghost calendar-nav"
+                  aria-label="다음 달"
+                  title="다음 달"
                 >
-                  다음
+                  <span aria-hidden="true">›</span>
                 </button>
               </div>
 
@@ -351,6 +373,6 @@
       </section>
     </div>
 
-    <script src="./app.js?v=20260629"></script>
+    <script src="./app.js?v=20260703"></script>
   </body>
 </html>
