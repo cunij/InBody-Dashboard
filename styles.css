@@ -65,7 +65,7 @@ html[data-theme="dark"] {
 }
 
 html[data-theme="discipline"] {
-  --page-background-image: url("./discipline-theme-upscaled.png");
+  --page-background-image: none;
   --glass-surface-image: url("./glass-surface-dark.webp");
   --bg: #070604;
   --bg-deep: #020201;
@@ -133,14 +133,10 @@ html[data-theme="dark"] body {
 }
 
 html[data-theme="discipline"] body {
-  background:
-    linear-gradient(90deg, rgba(0, 0, 0, 0.9) 0%, rgba(4, 3, 2, 0.56) 42%, rgba(0, 0, 0, 0.34) 100%),
-    linear-gradient(180deg, rgba(0, 0, 0, 0.18) 0%, rgba(0, 0, 0, 0.42) 48%, rgba(0, 0, 0, 0.88) 100%),
-    var(--page-background-image),
-    linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
+  background: #000;
   background-attachment: fixed;
-  background-position: center top, center top, center top, center;
-  background-size: cover, cover, cover, cover;
+  background-position: center;
+  background-size: auto;
 }
 
 body::before {
@@ -164,11 +160,8 @@ html[data-theme="dark"] body::before {
 }
 
 html[data-theme="discipline"] body::before {
-  background:
-    linear-gradient(90deg, rgba(244, 210, 138, 0.12), transparent 18%, rgba(244, 210, 138, 0.06) 42%, transparent 68%, rgba(244, 210, 138, 0.08)),
-    repeating-linear-gradient(90deg, rgba(244, 210, 138, 0.045) 0 1px, transparent 1px 9px);
-  mix-blend-mode: screen;
-  opacity: 0.13;
+  background: none;
+  opacity: 0;
 }
 
 html[data-theme="discipline"] body::after {
@@ -2818,7 +2811,7 @@ html[data-theme="discipline"] .workout-split-button[data-workout-type="CARDIO"][
   .page-shell {
     width: min(100% - 24px, 1000px);
     perspective: none;
-    padding-top: 20px;
+    padding-top: 18px;
   }
 
   .topbar {
@@ -2827,7 +2820,7 @@ html[data-theme="discipline"] .workout-split-button[data-workout-type="CARDIO"][
 
   .topbar-left {
     gap: 12px;
-    padding-left: 74px;
+    padding-left: 68px;
   }
 
   .topbar h1 {
@@ -2841,8 +2834,8 @@ html[data-theme="discipline"] .workout-split-button[data-workout-type="CARDIO"][
   }
 
   .app-menu {
-    top: 18px;
-    left: 16px;
+    top: 12px;
+    left: 12px;
   }
 
   .app-menu-panel {
