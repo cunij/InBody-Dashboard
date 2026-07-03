@@ -118,7 +118,15 @@ const latestSummary = document.getElementById("latest-summary");
 const appStatus = document.getElementById("app-status");
 const routineDisplay = document.getElementById("routine-display");
 const routineDisplayDate = document.getElementById("routine-display-date");
-const themeToggle = document.getElementById("theme-toggle");
+const appTitle = document.getElementById("app-title");
+const menuToggle = document.getElementById("menu-toggle");
+const appMenuPanel = document.getElementById("app-menu-panel");
+const menuThemeButton = document.getElementById("menu-theme-button");
+const menuViewButtons = Array.from(document.querySelectorAll("[data-menu-view]"));
+const themeModal = document.getElementById("theme-modal");
+const themeModalBackdrop = document.getElementById("theme-modal-backdrop");
+const themeModalClose = document.getElementById("close-theme-modal");
+const themeChoices = Array.from(document.querySelectorAll("[data-theme-choice]"));
 const heroStack = document.getElementById("hero-stack");
 const routineDateLabel = document.getElementById("routine-date-label");
 const routineBuilder = document.getElementById("routine-builder");
@@ -200,6 +208,14 @@ const metricConfig = {
   bodyFat: { label: "체지방률", unit: "%", color: "#f05275" },
   muscle: { label: "골격근량", unit: "kg", color: "#19b98a" },
 };
+
+const disciplineMetricColors = {
+  weight: "#f4d28a",
+  bodyFat: "#d8aa55",
+  muscle: "#f0c46c",
+};
+
+const THEME_OPTIONS = new Set(["light", "dark", "discipline"]);
 
 const ROUTINE_TEMPLATES = {
   PUSH: [
@@ -289,7 +305,20 @@ function bindEvents() {
   if (resetStorageButton) {
     resetStorageButton.addEventListener("click", resetStorage);
   }
-  themeToggle.addEventListener("click", toggleTheme);
+  document.addEventListener("click", handleMenuToggleClick, true);
+  if (menuThemeButton) {
+    menuThemeButton.addEventListener("click", openThemeModalFromMenu);
+  }
+  menuViewButtons.forEach((button) => {
+    button.addEventListener("click", () =>
+      selectAppView(button.dataset.menuView, button.dataset.menuTarget),
+    );
+  });
+  themeChoices.forEach((button) => {
+    button.addEventListener("click", () =>
+      selectTheme(button.dataset.themeChoice),
+    );
+  });
   routineSplitButtons.forEach((button) => {
     button.addEventListener("click", () =>
       setRoutineDraftSplit(button.dataset.routineSplit),
@@ -358,10 +387,17 @@ function bindEvents() {
 
   chartModalClose.addEventListener("click", () => closeChartModal());
   chartModalBackdrop.addEventListener("click", () => closeChartModal());
+  if (themeModalClose) {
+    themeModalClose.addEventListener("click", () => closeThemeModal());
+  }
+  if (themeModalBackdrop) {
+    themeModalBackdrop.addEventListener("click", () => closeThemeModal());
+  }
   chartModalCanvas.addEventListener("pointermove", handleModalPointerMove);
   chartModalCanvas.addEventListener("pointerleave", () =>
     hideTooltip(chartModalTooltip),
   );
+  window.addEventListener("click", handleGlobalClick);
   window.addEventListener("scroll", handleWindowScroll, { passive: true });
   window.addEventListener("keydown", handleGlobalKeydown);
   window.addEventListener("resize", handleWindowResize);
@@ -691,7 +727,7 @@ function setProfileEditing(nextEditing) {
 }
 
 function applySavedTheme() {
-  const savedTheme = loadSettings().theme;
+  const savedTheme = normalizeTheme(loadSettings().theme);
   const preferredTheme =
     savedTheme ||
     (window.matchMedia("(prefers-color-scheme: dark)").matches
@@ -702,17 +738,115 @@ function applySavedTheme() {
 }
 
 function applyTheme(theme) {
-  document.documentElement.dataset.theme = theme;
-  themeToggle.textContent = theme === "dark" ? "라이트 모드" : "다크 모드";
+  const nextTheme = normalizeTheme(theme) || "light";
+  document.documentElement.dataset.theme = nextTheme;
+  if (appTitle) {
+    appTitle.textContent = nextTheme === "discipline" ? "DISCIPLINE" : "Body Tracker";
+  }
+  document.title = nextTheme === "discipline" ? "DISCIPLINE" : "Body Tracker";
+  themeChoices.forEach((button) => {
+    const selected = button.dataset.themeChoice === nextTheme;
+    button.classList.toggle("is-selected", selected);
+    button.setAttribute("aria-pressed", String(selected));
+  });
 }
 
-function toggleTheme() {
-  const currentTheme =
-    document.documentElement.dataset.theme === "dark" ? "dark" : "light";
-  const nextTheme = currentTheme === "dark" ? "light" : "dark";
+function normalizeTheme(theme) {
+  return THEME_OPTIONS.has(theme) ? theme : "";
+}
+
+function selectTheme(theme) {
+  const nextTheme = normalizeTheme(theme) || "light";
   applyTheme(nextTheme);
   saveSettingsData({ theme: nextTheme });
+  closeThemeModal();
   renderCharts();
+}
+
+function handleMenuToggleClick(event) {
+  const toggle = event.target.closest?.("#menu-toggle");
+  if (!toggle) {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+  setAppMenuOpen(!document.body.classList.contains("menu-open"));
+}
+
+function setAppMenuOpen(isOpen) {
+  if (!menuToggle || !appMenuPanel) {
+    return;
+  }
+
+  document.body.classList.toggle("menu-open", isOpen);
+  menuToggle.setAttribute("aria-expanded", String(isOpen));
+  appMenuPanel.setAttribute("aria-hidden", String(!isOpen));
+}
+
+function openThemeModalFromMenu(event) {
+  event.stopPropagation();
+  setAppMenuOpen(false);
+  window.setTimeout(openThemeModal, 0);
+}
+
+function selectAppView(view, selector) {
+  const nextView = view === "record-input" ? "record-input" : "records";
+  setAppMenuOpen(false);
+  document.body.dataset.activeView = nextView;
+  menuViewButtons.forEach((button) => {
+    const selected = button.dataset.menuView === nextView;
+    button.classList.toggle("is-active", selected);
+    button.setAttribute("aria-pressed", String(selected));
+  });
+
+  requestAnimationFrame(() => {
+    const target = selector ? document.querySelector(selector) : null;
+    if (target) {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  });
+}
+
+function openThemeModal() {
+  if (!themeModal) {
+    return;
+  }
+
+  themeModal.hidden = false;
+  themeModal.setAttribute("aria-hidden", "false");
+  document.body.classList.add("modal-open");
+
+  requestAnimationFrame(() => {
+    themeModal.classList.add("is-open");
+    const activeChoice =
+      themeChoices.find(
+        (button) =>
+          button.dataset.themeChoice === document.documentElement.dataset.theme,
+      ) || themeChoices[0];
+    activeChoice?.focus();
+  });
+}
+
+function closeThemeModal({ immediate = false } = {}) {
+  if (!themeModal) {
+    return;
+  }
+
+  themeModal.classList.remove("is-open");
+  themeModal.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("modal-open");
+
+  if (immediate) {
+    themeModal.hidden = true;
+    return;
+  }
+
+  window.setTimeout(() => {
+    if (!themeModal.classList.contains("is-open")) {
+      themeModal.hidden = true;
+    }
+  }, 240);
 }
 
 function renderServerStatus(status, message = "") {
@@ -2118,7 +2252,7 @@ function drawMetricChart(canvas, metricKey, options = {}) {
 
   if (points.length > 1) {
     const isSmoothCurve = options.curve === "smooth";
-    const seriesColor = metricConfig[metricKey].color;
+    const seriesColor = getMetricSeriesColor(metricKey);
     const baseline = height - padding.bottom;
     const fillGradient = context.createLinearGradient(0, padding.top, 0, baseline);
     fillGradient.addColorStop(0, getAlphaColor(seriesColor, 0.24));
@@ -2149,7 +2283,7 @@ function drawMetricChart(canvas, metricKey, options = {}) {
   if (showPoints) {
     points.forEach((point) => {
       context.fillStyle = colors.panelStrong;
-      context.strokeStyle = metricConfig[metricKey].color;
+      context.strokeStyle = getMetricSeriesColor(metricKey);
       context.lineWidth = 2;
       context.beginPath();
       context.arc(point.x, point.y, 4.8, 0, Math.PI * 2);
@@ -2236,6 +2370,14 @@ function getChartThemeColors() {
     panelStrong: styles.getPropertyValue("--panel-strong").trim(),
     grid: styles.getPropertyValue("--line").trim(),
   };
+}
+
+function getMetricSeriesColor(metricKey) {
+  if (document.documentElement.dataset.theme === "discipline") {
+    return disciplineMetricColors[metricKey] || "#f4d28a";
+  }
+
+  return metricConfig[metricKey]?.color || "#2f7df6";
 }
 
 function drawChartGrid(context, width, height, padding, gridColor) {
@@ -2555,8 +2697,32 @@ function handleChartKeydown(event, metricKey) {
   }
 }
 
+function handleGlobalClick(event) {
+  if (
+    document.body.classList.contains("menu-open") &&
+    menuToggle &&
+    !menuToggle.contains(event.target) &&
+    !appMenuPanel.contains(event.target)
+  ) {
+    setAppMenuOpen(false);
+  }
+}
+
 function handleGlobalKeydown(event) {
-  if (event.key === "Escape" && !chartModal.hidden) {
+  if (event.key !== "Escape") {
+    return;
+  }
+
+  if (document.body.classList.contains("menu-open")) {
+    setAppMenuOpen(false);
+  }
+
+  if (themeModal && !themeModal.hidden) {
+    closeThemeModal();
+    return;
+  }
+
+  if (!chartModal.hidden) {
     closeChartModal();
   }
 }

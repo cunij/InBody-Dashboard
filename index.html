@@ -10,19 +10,67 @@
       href="https://fonts.googleapis.com/css2?family=SUIT:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260703" />
+    <link rel="stylesheet" href="./styles.css?v=20260704-discipline-modal-menu1" />
   </head>
-  <body>
+  <body data-active-view="records">
+    <aside
+      id="app-menu-panel"
+      class="app-menu-panel"
+      aria-hidden="true"
+      aria-label="앱 메뉴"
+    >
+      <div class="app-menu-panel-head">
+        <span>MENU</span>
+      </div>
+      <nav class="app-menu-list" aria-label="앱 메뉴 항목">
+        <button
+          type="button"
+          class="app-menu-item is-active"
+          data-menu-view="records"
+          data-menu-target=".hero-calendar"
+          aria-pressed="true"
+        >
+          기록
+        </button>
+        <button
+          type="button"
+          class="app-menu-item"
+          data-menu-view="record-input"
+          data-menu-target=".record-grid"
+          aria-pressed="false"
+        >
+          기록 입력
+        </button>
+        <button type="button" id="menu-theme-button" class="app-menu-item">
+          테마
+        </button>
+      </nav>
+    </aside>
     <div class="page-shell">
       <div class="hero-stack" id="hero-stack">
         <header class="topbar hero-title">
-          <h1>Body Tracker</h1>
-          <button type="button" id="theme-toggle" class="theme-toggle">
-            다크 모드
-          </button>
+          <div class="topbar-left">
+            <div class="app-menu">
+              <button
+                type="button"
+                id="menu-toggle"
+                class="menu-toggle"
+                aria-label="메뉴 열기"
+                aria-expanded="false"
+                aria-controls="app-menu-panel"
+              >
+                <span class="menu-toggle-box" aria-hidden="true">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </span>
+              </button>
+            </div>
+            <h1 id="app-title">Body Tracker</h1>
+          </div>
         </header>
 
-        <section class="panel calendar-panel hero-calendar">
+        <section class="panel calendar-panel hero-calendar" data-view-section="records">
           <div class="panel-head panel-head-inline">
             <div>
               <h2>캘린더</h2>
@@ -164,7 +212,7 @@
         </section>
       </div>
 
-      <section class="panel summary-panel">
+      <section class="panel summary-panel" data-view-section="records">
         <p class="section-label">최근 기록</p>
         <div id="latest-summary" class="summary-content empty">
           아직 기록이 없습니다. 첫 측정값을 입력하세요.
@@ -173,7 +221,7 @@
 
             <p id="app-status" class="status-line page-status"></p>
 
-      <section class="panel chart-panel">
+      <section class="panel chart-panel" data-view-section="records">
         <div class="panel-head">
           <h2>변화</h2>
         </div>
@@ -235,7 +283,7 @@
           </article>
         </div>
       </section>
-      <section class="record-grid">
+      <section class="record-grid" data-view-section="record-input">
 <section class="panel form-panel">
           <div class="panel-head">
             <h2>기록 입력</h2>
@@ -373,6 +421,49 @@
       </section>
     </div>
 
-    <script src="./app.js?v=20260703"></script>
+    <div id="theme-modal" class="theme-modal" hidden aria-hidden="true">
+      <div id="theme-modal-backdrop" class="theme-modal-backdrop"></div>
+      <section
+        class="theme-modal-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="theme-modal-title"
+      >
+        <div class="theme-modal-head">
+          <h3 id="theme-modal-title">테마</h3>
+          <button type="button" id="close-theme-modal" class="ghost theme-modal-close">
+            닫기
+          </button>
+        </div>
+        <div class="theme-choice-grid">
+          <button type="button" class="theme-choice" data-theme-choice="light">
+            <span class="theme-preview theme-preview-light" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+            </span>
+            <strong>화이트</strong>
+          </button>
+          <button type="button" class="theme-choice" data-theme-choice="dark">
+            <span class="theme-preview theme-preview-dark" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+            </span>
+            <strong>다크</strong>
+          </button>
+          <button type="button" class="theme-choice" data-theme-choice="discipline">
+            <span class="theme-preview theme-preview-discipline" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+            </span>
+            <strong>Discipline</strong>
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <script src="./app.js?v=20260704-discipline-modal-menu1"></script>
   </body>
 </html>

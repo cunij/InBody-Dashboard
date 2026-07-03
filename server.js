@@ -13,6 +13,8 @@ const publicFiles = new Map([
   ["/app.js", "app.js"],
   ["/back.avif", "back.avif"],
   ["/this.avif", "this.avif"],
+  ["/discipline-theme.png", "discipline-theme.png"],
+  ["/discipline-theme-upscaled.png", "discipline-theme-upscaled.png"],
   ["/glass-surface-light.webp", "glass-surface-light.webp"],
   ["/glass-surface-dark.webp", "glass-surface-dark.webp"],
   ["/premium_photo-1672201106204-58e9af7a2888.avif", "premium_photo-1672201106204-58e9af7a2888.avif"],
