@@ -1112,12 +1112,20 @@ function contentType(fileName) {
     return "image/webp";
   }
 
+  if (fileName.endsWith(".png")) {
+    return "image/png";
+  }
+
   return "application/octet-stream";
 }
 
 function cacheControlFor(fileName) {
   if (fileName.endsWith(".html")) {
     return "no-cache";
+  }
+
+  if (/\.(avif|webp|png)$/u.test(fileName)) {
+    return "public, max-age=86400";
   }
 
   return "public, max-age=0, must-revalidate";

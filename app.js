@@ -278,6 +278,11 @@ let heroSceneFrame = 0;
 let resizeFrame = 0;
 let workoutDayPointerFrame = 0;
 let pendingWorkoutDayPointer = null;
+let chartVisibilityObserver = null;
+let visibleChartMetrics = new Set();
+let pendingChartMetrics = new Set(Object.keys(chartElements));
+let lastViewportWidth = window.innerWidth;
+let hasLoadedPersistedData = false;
 
 bootstrap();
 
@@ -285,8 +290,9 @@ async function bootstrap() {
   setDateInputValue();
   applySavedTheme();
   renderProfile();
-  renderAll();
+  renderAll({ renderCharts: false });
   bindEvents();
+  initializeChartVisibilityObserver();
   syncHeroScrollScene();
   await loadPersistedData();
 }
@@ -450,6 +456,7 @@ async function loadPersistedData() {
         return loadPersistedData();
       }
     }
+    hasLoadedPersistedData = true;
     renderProfile();
     renderAll();
   } catch (error) {
@@ -458,6 +465,7 @@ async function loadPersistedData() {
     dailyRoutines = {};
     profileContent = DEFAULT_PROFILE;
     routineDraftDate = "";
+    hasLoadedPersistedData = true;
     renderProfile();
     renderAll();
     appStatus.textContent = `저장된 데이터를 불러오지 못했습니다: ${error.message}`;
@@ -1000,7 +1008,7 @@ async function deleteRecord(id) {
   appStatus.textContent = "선택한 기록을 삭제했습니다.";
 }
 
-function renderAll() {
+function renderAll({ renderCharts: shouldRenderCharts = true } = {}) {
   renderLatestSummary();
   renderHistoryTable();
   renderWorkoutSummary();
@@ -1008,7 +1016,9 @@ function renderAll() {
   renderWorkoutEditor();
   renderWorkoutCalendar();
   renderRoutinePanel();
-  renderCharts();
+  if (shouldRenderCharts) {
+    renderCharts();
+  }
 }
 
 function renderLatestSummary() {
@@ -2126,12 +2136,62 @@ function getPreferredRoutineSplit() {
     : MAIN_WORKOUT_SPLITS[0];
 }
 
-function renderCharts() {
+function initializeChartVisibilityObserver() {
+  if (!("IntersectionObserver" in window)) {
+    visibleChartMetrics = new Set(Object.keys(chartElements));
+    return;
+  }
+
+  chartVisibilityObserver = new IntersectionObserver(
+    (entries) => {
+      let shouldRender = false;
+
+      entries.forEach((entry) => {
+        const metricKey = entry.target.dataset.metric;
+        if (!metricKey) {
+          return;
+        }
+
+        if (entry.isIntersecting) {
+          visibleChartMetrics.add(metricKey);
+          if (pendingChartMetrics.has(metricKey)) {
+            shouldRender = true;
+          }
+        } else {
+          visibleChartMetrics.delete(metricKey);
+        }
+      });
+
+      if (shouldRender && hasLoadedPersistedData) {
+        requestAnimationFrame(() => renderCharts({ invalidate: false }));
+      }
+    },
+    { rootMargin: "280px 0px" },
+  );
+
+  Object.values(chartElements).forEach(({ card }) => {
+    chartVisibilityObserver.observe(card);
+  });
+}
+
+function renderCharts({ force = false, invalidate = true } = {}) {
   const fullData = getSortedRecordsAsc();
   const data = getChartRenderData(fullData);
   const colors = getChartThemeColors();
 
+  if (invalidate) {
+    pendingChartMetrics = new Set(Object.keys(chartElements));
+  }
+
   Object.entries(chartElements).forEach(([metricKey, elements]) => {
+    const isVisible =
+      force || !chartVisibilityObserver || visibleChartMetrics.has(metricKey);
+
+    updateChartCardState(metricKey, data.length > 0);
+    if (!isVisible || (!force && !pendingChartMetrics.has(metricKey))) {
+      return;
+    }
+
     hideTooltip(elements.tooltip);
     chartStates[metricKey] = drawMetricChart(elements.canvas, metricKey, {
       data,
@@ -2143,7 +2203,7 @@ function renderCharts() {
       minWidth: 280,
       padding: { top: 22, right: 18, bottom: 32, left: 46 },
     });
-    updateChartCardState(metricKey);
+    pendingChartMetrics.delete(metricKey);
   });
 
   if (activeModalMetric) {
@@ -2155,9 +2215,9 @@ function renderCharts() {
   }
 }
 
-function updateChartCardState(metricKey) {
+function updateChartCardState(metricKey, hasData = chartStates[metricKey].hasData) {
   const elements = chartElements[metricKey];
-  const isInteractive = chartStates[metricKey].hasData;
+  const isInteractive = hasData;
 
   elements.card.classList.toggle("is-interactive", isInteractive);
   elements.card.setAttribute("aria-disabled", isInteractive ? "false" : "true");
@@ -2166,7 +2226,7 @@ function updateChartCardState(metricKey) {
 
 function drawMetricChart(canvas, metricKey, options = {}) {
   const context = canvas.getContext("2d");
-  const dpr = window.devicePixelRatio || 1;
+  const dpr = Math.min(window.devicePixelRatio || 1, isMobileViewport() ? 1.5 : 2);
   const cssWidth = Math.max(
     canvas.clientWidth || options.minWidth || 480,
     options.minWidth || 280,
@@ -2740,7 +2800,7 @@ function syncHeroScrollScene() {
     return;
   }
 
-  const enableScene = !reducedMotionMedia.matches;
+  const enableScene = !reducedMotionMedia.matches && !isMobileViewport();
   heroStack.classList.toggle("is-scroll-scene", enableScene);
 
   if (!enableScene) {
@@ -2805,10 +2865,18 @@ function handleWindowResize() {
 
   resizeFrame = requestAnimationFrame(() => {
     resizeFrame = 0;
+    const viewportWidthChanged = lastViewportWidth !== window.innerWidth;
+    lastViewportWidth = window.innerWidth;
     syncHeroScrollScene();
-    renderWorkoutCalendar();
-    renderCharts();
+    if (viewportWidthChanged) {
+      renderWorkoutCalendar();
+      renderCharts();
+    }
   });
+}
+
+function isMobileViewport() {
+  return window.matchMedia("(max-width: 720px)").matches;
 }
 
 async function generateAnalysis() {

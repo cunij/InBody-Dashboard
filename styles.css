@@ -2804,6 +2804,10 @@ html[data-theme="discipline"] .workout-split-button[data-workout-type="CARDIO"][
 }
 
 @media (max-width: 720px) {
+  body::before {
+    display: none;
+  }
+
   :root {
     --menu-width: min(78vw, 276px);
   }
