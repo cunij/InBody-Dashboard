@@ -749,9 +749,9 @@ function applyTheme(theme) {
   const nextTheme = normalizeTheme(theme) || "light";
   document.documentElement.dataset.theme = nextTheme;
   if (appTitle) {
-    appTitle.textContent = nextTheme === "discipline" ? "DISCIPLINE" : "Body Tracker";
+    appTitle.textContent = "Calendar";
   }
-  document.title = nextTheme === "discipline" ? "DISCIPLINE" : "Body Tracker";
+  document.title = "Calendar";
   themeChoices.forEach((button) => {
     const selected = button.dataset.themeChoice === nextTheme;
     button.classList.toggle("is-selected", selected);
